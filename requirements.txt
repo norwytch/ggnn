@@ -1,0 +1,6 @@
+# Pinned for a clean CPU run. torch 2.2.x is built against the NumPy 1.x ABI,
+# so NumPy is held below 2.0 to avoid the well-known import-time crash.
+numpy<2
+torch>=2.0,<2.3
+scikit-learn>=1.2
+matplotlib>=3.6

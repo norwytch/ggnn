@@ -81,7 +81,7 @@ pip install -r requirements.txt
 python run_experiment.py
 ```
 
-Runs in a few seconds on CPU. Prints a results table and writes
+Runs in under a minute on CPU. Prints a results table and writes
 `results/pr_auc.png` and `results/separation.png`.
 
 ## The sieve cover: making the GGNN aspect load-bearing
@@ -98,7 +98,8 @@ task where the plain covers **provably** fail.
 Task: distinguish the 4×4 **Rook's graph** from the **Shrikhande graph** — both
 SRG(16,6,2,2), non-isomorphic, Weisfeiler-Leman-indistinguishable, and
 **cospectral**. Cospectrality means the walk and closed-walk features are
-identical at every length (the script prints `6, 12, 96, 480, 2976` for both), so
+identical at every length (the script prints closed-walk counts `Tr(Aᵗ) =
+0, 96, 192, 1536, 7680` for both), so
 the walk and reachability covers — and any model built on them — are at chance by
 construction.
 
@@ -146,16 +147,17 @@ here — the sieve closure becomes the **causal past** of an event.
 
 A plain static GCN and an MLP given the v2 static reachability features both sit
 at the ~7% base rate; the same MLP given **temporal** cover features reaches
-PR-AUC ~0.74. It is not perfect, and that is honest: the residual false positives
-are benign activity that *coincidentally* forms time-respecting chains — a real
-phenomenon that reachability alone cannot resolve and that would need event
+PR-AUC ~0.83. It is not perfect, and that is honest: the residual false positives
+are benign activity that *coincidentally* forms a time-respecting chain (a
+scrambled benign ordering is increasing end-to-end about 1/5! of the time) — a
+real phenomenon that reachability alone cannot resolve and that would need event
 correlation to clean up.
 
 ![lead time](results/temporal_lead.png)
 
 Time also unlocks a metric a static classifier cannot even define: how long before
-exfiltration the temporal path completes. Most attacks are flagged with positive
-lead time — detected before the data leaves.
+exfiltration the temporal path completes. Every attack whose temporal path
+completes is flagged with positive lead time — detected before the data leaves.
 
 ## Repository layout
 
@@ -217,8 +219,8 @@ ceiling are higher-order k-WL networks, subgraph GNNs (Bouritsas et al., *GSN*,
 arXiv:2006.09252; Bevilacqua et al., *ESAN*, 2022), and substructure/positional
 encodings — all sharing the one tension this repo also faces: **expressivity
 trades off against scalability**. Recent 2025–26 work chases cheap expressivity
-(e.g. k-hop subgraph WL, Chen–Zhang–Wang 2025; invariant-stratified propagation,
-arXiv:2603.01388). The SRG/CSL/BREC isomorphism benchmarks used by the source
+(e.g. invariant-stratified propagation, Hevapathige et al., arXiv:2603.01388,
+KDD 2026). The SRG/CSL/BREC isomorphism benchmarks used by the source
 paper are the standard yardsticks here, and GSN already reported strong SRG
 results when given domain-chosen substructures.
 

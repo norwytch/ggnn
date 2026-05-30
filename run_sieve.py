@@ -63,6 +63,9 @@ def main():
           check_homomorphism())
     # cospectral / walk-cover-blind check
     wr, ws = walk_cover(rook44(), K), walk_cover(shrikhande(), K)
+    cwt = lambda A: [int(round(np.trace(np.linalg.matrix_power(A, t)))) for t in range(1, 6)]
+    print("Closed walks Tr(A^t), t=1..5  -> Rook:", cwt(rook44()),
+          " Shrikhande:", cwt(shrikhande()), " (cospectral: identical)")
     print("Walk-cover node-feature multisets identical (Rook vs Shrikhande):",
           np.array_equal(np.sort(wr, 0), np.sort(ws, 0)))
     print("Sieve-cover #triangles per node  -> Rook:", set(sieve_cover(rook44(), L)[:, 0].astype(int)),
