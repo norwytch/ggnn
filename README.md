@@ -4,7 +4,8 @@ This repo is my attempt to understand Grothendieck Graph Neural Networks (GGNNs)
 and apply them to a security use case. It is a small proof of concept on synthetic
 data, not a deployable detector.
 
-Out-of-the-box GNNs can depict networks, but cannot recover the signal of a "blast radius" that a laterally moving attack might target. Adding Grothendieck-derived 'covers' can recover this signal. 
+Out-of-the-box GNNs can learn over networks, but cannot recover the **blast-radius**
+signal a lateral-movement attacker would exploit. Grothendieck-style **covers** can.
 
 ![PR-AUC](results/pr_auc.png)
 
@@ -21,9 +22,9 @@ regression on a single scalar nails it.*
 
 ## Use case
 
-Networks can be represented by graphs, called access graphs. Nodes/vertices are hosts, end devices, or user accounts, and a directed edge `u → v` represents that an identity on `u` can authenticate to `v`. 
-We classify two
-estates that look identical *locally* but differ in **blast radius**:
+Networks can be represented by graphs, called access graphs. Nodes/vertices are hosts, end devices, or user accounts, and a directed edge `u → v` represents that an identity on `u` can authenticate to `v`.
+We classify two estates that look identical *locally* but differ in
+**blast radius**:
 
 | class | structure | meaning |
 |------|-----------|---------|
@@ -34,7 +35,7 @@ The example uses one 12-cycle vs two 6-cycles; the dataset varies size and segme
 count, and tests on a size never seen in training. Telling these apart is the core
 of lateral-movement risk — and a standard GNN can't do it.
 
-## The 1-Weisfeiler-Leman Test
+## Why standard GNNs fail: the 1-WL test
 
 Message-passing GNNs are bounded by the **1-Weisfeiler-Leman (1-WL)** test. In both
 classes every node has in-degree 1, out-degree 1, and the same feature, so 1-WL
