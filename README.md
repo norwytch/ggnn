@@ -147,6 +147,51 @@ Time also gives a metric a static model can't even define: how long before exfil
 path completes. Every detected attack gets positive lead time — caught before the
 data leaves.
 
+## Real-data probe (LANL)
+
+```bash
+python run_lanl.py --smoke                                  # synthetic plumbing test
+python run_lanl.py --auth auth.txt.gz --redteam redteam.txt # the real slice
+```
+
+Everything above is synthetic, and on synthetic data I get to choose the task, which
+means I can always build one where the cover wins. That is fine for teaching a
+mechanism but it proves nothing about whether covers are worth their cost in
+practice. This probe is the attempt to break that circularity on real data, and I am
+writing down the hypothesis here *before* I trust any number, so that a negative
+result is reported as a negative result rather than quietly dropped.
+
+The data is LANL's *Comprehensive, Multi-Source Cyber-Security Events* (Kent, 2015),
+which is 58 days of real authentication events with a small set of labelled red-team
+logons. You have to download it yourself from
+[csr.lanl.gov](https://csr.lanl.gov/data/cyber1/); the harness does not fetch it. The
+task is edge-level: given an authentication `src → dst` in a time window, was it
+red-team lateral movement? The split is temporal, so the model trains on early days
+and is tested on later ones, and novelty is only ever computed against the past.
+
+The honest part is the baseline. A real authentication graph is essentially one giant
+connected component, so the trick that scores a perfect 1.0 on the synthetic task —
+counting components or measuring global reachability — is simply uninformative here.
+What actually works on LANL is mundane: whether a `src → dst` edge or a
+credential-on-a-host has ever been seen before, because red-team movement so often
+lands on a host the credential has never touched. That novelty-plus-degree detector,
+with no GNN at all, is the bar to beat. The probe fits the *same* logistic regression
+twice, once on those baseline features and once on baseline features plus a bounded,
+ego-net-restricted reachability cover, and asks whether the cover block adds recall at
+a realistic false-positive budget (0.1% FPR), reported alongside an alerts-per-day
+figure that an analyst would actually feel.
+
+**Hypothesis, pre-registered.** I expect the novelty baseline to be hard to beat, and
+I will be unsurprised if the cover adds little or nothing once the signal is no longer
+handed over by construction. If the cover does clear the baseline at low FPR, that is
+a genuine result worth building on; if it does not, that null is the finding, and it
+is exactly what the circularity caveat in the limitations predicts. One caveat colours
+every number: the red-team labels are a lower bound, so some apparent false positives
+may be unlabelled malicious activity, which makes the reported precision pessimistic.
+As of now the real slice has not been run; only the synthetic smoke test has, and it
+behaves as intended by reporting a null when the attacks are already caught by
+novelty.
+
 ## Repository layout
 
 ```
@@ -165,6 +210,12 @@ src/temporal_*.py  temporal demo: event-stream generator, time-respecting
                    reachability operator, and models
 run_temporal.py    temporal demo runner (static models vs temporal cover) +
                    an early-detection (lead-time) metric
+src/lanl.py        LANL loader: auth/redteam parsing, time-windowed access
+                   graphs, + a synthetic slice for a no-download smoke test
+src/baselines.py   honest baseline (edge/credential novelty + degrees) vs the
+                   bounded ego-net reachability cover, as per-edge features
+run_lanl.py        real-data probe: temporal split, same classifier on baseline
+                   vs baseline+cover; PR-AUC, recall@0.1%FPR, alerts/day
 notebooks/         four-part guided tour (covers -> static -> sieve -> temporal),
                    each importing from src/ with rendered outputs
 ```
