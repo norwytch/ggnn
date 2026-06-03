@@ -84,6 +84,16 @@ python run_experiment.py
 Runs in under a minute on CPU. Prints a results table and writes
 `results/pr_auc.png` and `results/separation.png`.
 
+## Guided notebooks
+
+If you'd rather read than run, [`notebooks/`](notebooks/) is a four-part tour that
+builds the ideas from scratch — what a cover *is*, the `Tr` homomorphism, and the
+walk / reachability / sieve covers — then walks through each demo with inline math,
+plots, and the category-theory intuition behind the sieve. Start with
+[01_covers](notebooks/01_covers.ipynb). They're committed with outputs rendered, so
+they read without running anything; see [notebooks/README.md](notebooks/README.md)
+for the kernel setup.
+
 ## The sieve cover: making the GGNN aspect load-bearing
 
 `python run_sieve.py`
@@ -177,6 +187,8 @@ src/temporal_*.py  temporal demo: event-stream generator, time-respecting
                    reachability operator, and models
 run_temporal.py    temporal demo runner (static models vs temporal cover) +
                    an early-detection (lead-time) metric
+notebooks/         four-part guided tour (covers -> static -> sieve -> temporal),
+                   each importing from src/ with rendered outputs
 ```
 
 ## Limitations and honest scope
