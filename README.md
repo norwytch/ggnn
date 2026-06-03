@@ -4,10 +4,8 @@ This repo is my attempt to understand Grothendieck Graph Neural Networks (GGNNs)
 and apply them to a security use case. It is a small proof of concept on synthetic
 data, not a deployable detector.
 
-Out-of-the-box GNNs can learn over networks, but cannot recover the **blast-radius**
-signal a lateral-movement attacker would exploit. Grothendieck-style **covers** can.
-
-![PR-AUC](results/pr_auc.png)
+BLUF: Out-of-the-box GNNs can learn over networks, but cannot recover the blast radius
+signal a lateral-movement attacker would exploit. Grothendieck-style covers can.
 
 | model | PR-AUC | recall @ 1% FPR |
 |---|---|---|
@@ -23,35 +21,30 @@ regression on a single scalar nails it.*
 ## Use case
 
 Networks can be represented by graphs, called access graphs. Nodes/vertices are hosts, end devices, or user accounts, and a directed edge `u → v` represents that an identity on `u` can authenticate to `v`.
-We classify two estates that look identical *locally* but differ in
-**blast radius**:
+We classify two estates that look identical locally but differ in blast radius:
 
-| class | structure | meaning |
-|------|-----------|---------|
-| `flat` | one directed 12-cycle | every host reaches every other — compromise one, reach all |
-| `segmented` | k disjoint directed cycles | isolated enclaves — compromise one, reach only its enclave |
+| class | structure | training | meaning |
+|------|-----------|----------|---------|
+| `flat` | one directed *n*-cycle (e.g. a 12-cycle) | sizes *n* vary; tested on a size never seen in training | every host reaches every other — compromise one, reach all |
+| `segmented` | *k* disjoint directed cycles (e.g. two 6-cycles) | sizes *n* and segment count *k* vary; tested on a size never seen in training | isolated enclaves — compromise one, reach only its enclave |
 
-The example uses one 12-cycle vs two 6-cycles; the dataset varies size and segment
-count, and tests on a size never seen in training. Telling these apart is the core
-of lateral-movement risk — and a standard GNN can't do it.
+Telling these two estates apart is critical in the context of lateral movement. The flat estate will endanger the entire network if compromised, whereas the segmented estate will endanger only its local segment (enclave). So let's get into why a standard GNN cannot tell these two apart.
 
 ## Why standard GNNs fail: the 1-WL test
 
 Message-passing GNNs are bounded by the **1-Weisfeiler-Leman (1-WL)** test. In both
 classes every node has in-degree 1, out-degree 1, and the same feature, so 1-WL
 gives every node the same colour forever — and a flat estate and a segmented one
-end up with the **same** embedding. That's why GCN and GIN score at the base rate.
+end up with the same embedding. That's why GCN and GIN score at the base rate.
 
-The missing signal is **global reachability**: the fraction of the estate each node
+The missing signal is global responsibility: the fraction of the estate each node
 can reach (~1.0 when flat, ~1/k when split into k enclaves), or equivalently the
 number of connected components (1 vs k). It's a property of the whole graph, not of
-any neighbourhood — so a 1-WL model can't recover it.
-
-![separation](results/separation.png)
+any neighbourhood, so a 1-WL model can't recover it.
 
 ## So why Grothendieck?
 
-GGNNs generalise a node's *neighbourhood* to a **cover**: a family of directed paths
+GGNNs generalise a node's neighbourhood to a cover: a family of directed paths
 written as matrices, where matrix multiplication is path concatenation. `CoverNet`
 uses one small instance — the reachability cover up to `K` hops — exposing, per node:
 
@@ -59,8 +52,14 @@ uses one small instance — the reachability cover up to `K` hops — exposing, 
 * closed walks of length `t` (`diag(Aᵗ)`) — the cycle signal 1-WL misses,
 * the size of its reachable set within `K` hops — the **blast radius**.
 
-An MLP over these solves the task exactly. Same idea at larger scale: the paper
-shows cover/sieve operators separate graphs that defeat even 3-WL.
+An MLP over these solves the task exactly. The paper goes further and claims the
+same idea scales, with cover/sieve operators separating graphs that defeat even
+3-WL. Treat that as the paper's claim rather than ours: it is the strongest
+expressivity assertion in the now-withdrawn submission, and a reviewer disputed it
+directly, arguing the framework is bounded by 2-FWL — which, since 2-FWL is
+equivalent to 3-WL, would contradict the "beyond 3-WL" reading. What this repo
+actually demonstrates is narrower and self-contained: the separations below, which
+hold regardless of where the framework lands in the WL hierarchy.
 
 ## Run it
 
@@ -86,30 +85,30 @@ with outputs rendered, so they read without running anything. Kernel setup is in
 python run_sieve.py
 ```
 
-The reachability cover is real GGNN machinery, but it does no *unique* work above —
-a plain component count ties it. So this demo picks a task where ordinary covers
-**provably** fail.
+The reachability cover is genuine GGNN machinery, but on the task above it does no work that a simpler method couldn't do, since a plain count of connected components ties it. So for this demo let's pick a task where ordinary covers provably fail.
 
-Distinguish the 4×4 **Rook's graph** from the **Shrikhande graph**: both are
-SRG(16,6,2,2), non-isomorphic, WL-indistinguishable, and **cospectral**. Cospectral
-means their walk and closed-walk counts match at every length — the script prints
-`Tr(Aᵗ) = 0, 96, 192, 1536, 7680` for both — so any walk- or reachability-based
-model is at chance.
+The task is to distinguish the 4×4 Rook's graph from the Shrikhande graph. Both of these are strongly regular with the same parameters, SRG(16,6,2,2), they are non-isomorphic, and they are indistinguishable by the WL test. They are also cospectral, which means their walk and closed-walk counts agree at every length. The script prints `Tr(Aᵗ) = 0, 96, 192, 1536, 7680` for both graphs, and because those numbers are identical, any model built on walks or reachability is stuck at chance.
 
-The **sieve cover** looks instead at the structure *among* a node's neighbours: the
-subgraph they induce. That's two triangles in Rook and a single 6-cycle in
-Shrikhande — the same C₆-vs-2·C₃ motif as before, now a *local* invariant.
+The sieve cover takes a different view. To see how, it helps to recall what the earlier covers actually do. The walk and reachability covers are built from the directed paths that leave a node, which is to say powers of the adjacency matrix `A`, and the features they expose are all outward-facing: how many walks arrive, how many close up, and how much of the estate the node can reach. That is a global question, namely *where can I get to*. The catch is that on a regular graph every node has the same degree, so these walk counts come out constant across nodes and identical between two cospectral graphs, which is exactly why they cannot tell Rook from Shrikhande.
+
+The sieve cover asks a local question instead. Rather than following paths out of a node, it looks sideways at the structure among the node's neighbours, that is, the subgraph those neighbours induce on each other. Concretely it restricts `A` to just the neighbour set and measures the wiring inside it, counting triangles, connected components, and short closed walks within that little subgraph. So the contrast is *not where my neighbours lead, but how my neighbours are wired to one another*. In the Rook's graph that induced subgraph is two triangles, whereas in the Shrikhande graph it is a single 6-cycle. This is the same C₆-versus-2·C₃ motif we saw before, except that now it shows up as a local property of each node rather than a global one. In the GGNN framing both are still covers fed through the same `Tr` homomorphism; the sieve cover is simply a more refined choice that conditions on the structure among the elements covering a node instead of treating them as a flat set.
 
 ![sieve](results/sieve_acc.png)
 
-`WalkCoverNet` and the trivial baseline sit at chance; `SieveNet` — the same
-architecture with the sieve cover added — reaches 100%. The whole gap comes from one
-cover choice: the GGNN thesis ("design message passing by choosing covers"), made
-load-bearing on a pair that defeats WL.
+`WalkCoverNet` and the trivial baseline both sit at chance, whereas `SieveNet`, which is the same architecture with the sieve cover added, reaches 100%. The entire gap comes from that one choice of cover. This is the GGNN thesis in practice, that you design message passing by choosing covers, made load-bearing on a pair of graphs that defeats WL.
 
-*(The sieve cover here is one principled instantiation of a precomposition-refined
-cover, not a verbatim copy of the paper's construction, which public sources
-under-specify.)*
+It is worth being honest about what this separation is and is not. The sieve cover
+works here by counting hand-chosen substructures in each node's neighbourhood, namely
+triangles, components, and short closed walks, and separating cospectral SRGs by
+neighbourhood substructure count is essentially the known Graph Substructure Network
+(GSN) result, which we cite in Related Work. So the win is real but not new
+expressivity in disguise: a reviewer of the paper made exactly this point, that the
+operations amount to substructure counting rather than an enlarged operation space.
+What the demo does show cleanly is the GGNN framing's central move — that swapping one
+cover for another, with the architecture held fixed, is what flips the model from
+chance to 100%.
+
+*(The sieve cover here is one principled instantiation of a precomposition-refined cover. It is not a verbatim copy of the paper's construction, which public sources under-specify.)*
 
 ## When time is the signal
 
@@ -184,6 +183,11 @@ A minimal demonstration of one mechanism, **not** a deployable detector:
   heavily imbalanced. None of that is modelled here.
 * **Robustness untested.** An attacker can pad benign-looking hops; a more
   expressive operator isn't automatically a more robust one.
+* **Leans on a withdrawn, disputed source.** The framework comes from a withdrawn
+  ICLR 2026 submission whose strongest expressivity claim a reviewer rejected, and the
+  sieve separation is essentially the known GSN substructure-counting result. The
+  demos here stand on their own, but the broader "beyond 3-WL" framing does not — see
+  the sieve section and References for the full hedge.
 
 ## Possible extensions
 
@@ -234,7 +238,12 @@ is where the genuine whitespace lies.
 
 * Paper: *Grothendieck Graph Neural Networks Framework: An Algebraic Platform for
   Crafting Topology-Aware GNNs* — arXiv:2412.08835. An ICLR 2026 submission of this
-  work was later withdrawn, so treat its claims as an unrefereed preprint.
+  work was later withdrawn, so treat its claims as an unrefereed preprint. We know
+  this because the paper's OpenReview page
+  ([forum 4hXoo5MhxZ](https://openreview.net/forum?id=4hXoo5MhxZ)) carries the status
+  label "ICLR 2026 Conference Withdrawn Submission" (last modified 2025-11-20). Note
+  that the arXiv preprint itself has not been retracted and remains available; it is
+  the conference submission that was withdrawn.
 * The `flat` vs `segmented` construction is the security reading of the classic
   C₆ vs 2·C₃ counterexample to 1-WL.
 
