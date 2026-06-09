@@ -28,9 +28,11 @@ lens, with runnable code, rendered notebooks, and a pre-registered real-data pro
 
 It is not evidence that cover-based GNNs beat existing tools. Every task here is also
 solved by something simpler: component counts, substructure counts, or edge novelty.
-The framework's real bet is learning which structure matters instead of hand-coding it,
-and on this evidence that bet is unproven
-([docs/expressivity-and-covers.md](docs/expressivity-and-covers.md#what-this-genuinely-adds)).
+The framework's real bet is learning which structure matters instead of hand-coding it
+([docs/expressivity-and-covers.md](docs/expressivity-and-covers.md#what-this-genuinely-adds)),
+and the one time it was tested on real data where the signal was not built in, it lost
+to a no-GNN novelty baseline (the [LANL probe](docs/lanl-probe.md) returned the
+pre-registered null).
 
 The framework comes from an ICLR 2026 submission that was withdrawn, and whose
 strongest claim a reviewer disputed. The sieve demo separates Rook vs Shrikhande, a
@@ -76,7 +78,7 @@ The demos write figures to `results/`, committed so they render here without run
 | static | 1-WL GNNs sit at the base rate; the reachability cover (or a one-line component count) solves it | [expressivity-and-covers](docs/expressivity-and-covers.md) |
 | sieve | swapping in the sieve cover separates Rook vs Shrikhande, a cospectral WL-indistinguishable pair | [expressivity-and-covers](docs/expressivity-and-covers.md#the-sieve-cover) |
 | temporal | identical static graphs, only event ordering differs; a temporal cover recovers it (PR-AUC ~0.83) | [temporal](docs/temporal.md) |
-| LANL probe | the honest test on real data, where a no-GNN novelty baseline is the bar | [lanl-probe](docs/lanl-probe.md) |
+| LANL probe | the honest test on real data: across two red-team windows the cover does not beat a no-GNN novelty baseline (the pre-registered null) | [lanl-probe](docs/lanl-probe.md) |
 | WL certification | certifies the Rook/Shrikhande and CFI pairs are 3-WL-indistinguishable, and shows where the sieve cover breaks | [expressivity-and-covers](docs/expressivity-and-covers.md#where-the-sieve-breaks) |
 
 ## Repository map
@@ -111,7 +113,9 @@ A minimal demonstration of one mechanism, not a deployable detector.
   value would be learning which cover matters, which these pre-rigged tasks cannot show.
 - Bounded for tractability. Reachability operators trend toward dense, ~O(n^3)
   computation. Real estates would need sparse, ego-net-restricted covers.
-- Static and synthetic. The [LANL probe](docs/lanl-probe.md) is the first step off this.
+- Static and synthetic for the core demos. The [LANL probe](docs/lanl-probe.md) is the
+  one real-data test, and it returned the pre-registered null: the cover does not beat a
+  novelty baseline once the signal isn't built in.
 - Built on a withdrawn, disputed source. See [References](docs/related-work.md#references).
 
 ## More

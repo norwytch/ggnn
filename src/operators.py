@@ -16,6 +16,7 @@ cover; this module is the plain-numpy version the non-cover code uses.
 """
 from __future__ import annotations
 import numpy as np
+from scipy import sparse
 
 
 def _symmetrise(A):
@@ -66,17 +67,29 @@ def reachable_counts(A, K=None):
 
     K=None means "to convergence" (K = n), i.e. the true reachable set along
     directed edges.
+
+    Boolean reachability done with sparse matrices: R = OR of A^0..A^K. This is
+    O(nnz * K), not the dense O(n^3) of repeated full matrix powers, so it scales
+    to the large, sparse per-window graphs in the LANL probe (a few thousand nodes
+    but only a few thousand edges). Numerically identical to the dense version.
     """
-    A = (np.asarray(A) > 0).astype(np.float32)
     n = A.shape[0]
     if K is None:
         K = n
-    R = np.eye(n, dtype=np.float32)
-    P = np.eye(n, dtype=np.float32)
+    As = sparse.csr_matrix((np.asarray(A) > 0).astype(np.float32))
+    R = sparse.identity(n, format="csr", dtype=np.float32)      # A^0 (self)
+    P = R.copy()
     for _ in range(K):
-        P = ((P @ A) > 0).astype(np.float32)
-        R = ((R + P) > 0).astype(np.float32)
-    return R.sum(1).astype(np.float32)
+        P = P @ As                                              # walks one hop further
+        if P.nnz == 0:
+            break
+        P = P.tocsr(); P.data[:] = 1.0                          # booleanise A^t
+        prev = R.nnz
+        R = R + P
+        R.data[:] = 1.0                                         # union
+        if R.nnz == prev:                                       # reachability converged
+            break
+    return np.asarray(R.sum(axis=1)).ravel().astype(np.float32)
 
 
 def blast_radius(A, K=None):

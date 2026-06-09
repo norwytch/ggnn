@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 .tmp/
 .ipynb_checkpoints/
+.DS_Store
+# LANL dataset: large (~11 GB) and downloaded by the user under LANL's terms; never commit it
+lanl/
+*.txt.gz
+lanl_*.log
