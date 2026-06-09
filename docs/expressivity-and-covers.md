@@ -77,6 +77,24 @@ the architecture fixed, and the model flips from chance to 100%.
 The sieve cover here is one principled instantiation of a precomposition-refined cover,
 not a verbatim copy of the paper's construction, which public sources under-specify.
 
+## Where the sieve breaks
+
+The sieve win on Rook/Shrikhande raises a fair question: is the sieve cover a general
+beyond-3-WL separator, or did it just happen to look at the substructure that differs?
+`run_wl.py` settles it with a second pair at the same WL level, built from a different
+mechanism: a Cai-Fuerer-Immerman (CFI) construction over K4 (`src/cfi.py`). The oracle
+certifies the CFI pair is also 3-WL-indistinguishable and 4-WL-distinguishable, exactly
+like Rook/Shrikhande.
+
+On this pair the sieve cover fails. CFI graphs are bipartite and regular, so every
+node's neighbourhood induces no triangles and the sieve's hand-chosen substructure
+counts come out identical on both graphs. The structure that actually differs is a
+global parity, which no fixed neighbourhood-substructure count can see. So the sieve
+cover is not a general beyond-3-WL separator. Its reach is exactly the substructure it
+was given, and it clears a pair only when that pair's difference happens to be that
+substructure. That is the reviewer's point, made concrete: the expressivity comes from
+the injected substructure, not the framework.
+
 ## What this genuinely adds
 
 Every task in this repo is tied by something simpler. Connected components solve `flat`

@@ -117,6 +117,35 @@ def test_generic_covers_fail_but_sieve_clears_the_3wl_pair():
     assert separates(covers.sieve_cover(R), covers.sieve_cover(S))
 
 
+# ---- where the sieve breaks: a non-SRG 3-WL-indistinguishable pair (CFI) -------
+
+def _rows_separate(fa, fb):
+    a = np.sort(np.round(np.asarray(fa), 6), axis=0)
+    b = np.sort(np.round(np.asarray(fb), 6), axis=0)
+    return a.shape != b.shape or not np.allclose(a, b)
+
+
+def test_cfi_k4_is_a_3wl_indistinguishable_pair():
+    from src import wl, cfi
+    A, B = cfi.cfi_pair(4, cfi.complete_graph(4))
+    assert A.shape == B.shape and not np.array_equal(A, B)
+    assert not wl.distinguishes(A, B, "1-WL")
+    assert not wl.distinguishes(A, B, "3-WL")
+    # non-isomorphism is certified by 4-WL in run_wl.py (~14s, too slow to assert here)
+    # and guaranteed by the CFI construction over a 2-edge-connected base.
+
+
+def test_sieve_breaks_on_the_cfi_pair():
+    # CFI graphs are bipartite and regular, so neighbourhood substructure counts are
+    # identical for both graphs. The sieve cover that cleared Rook/Shrikhande fails
+    # here: its reach is exactly the substructure it was hand-given, not general
+    # beyond-3-WL power.
+    from src import cfi
+    A, B = cfi.cfi_pair(4, cfi.complete_graph(4))
+    assert not _rows_separate(covers.sieve_cover(A), covers.sieve_cover(B))
+    assert not _rows_separate(covers.walk_cover(A, 4), covers.walk_cover(B, 4))
+
+
 # ---- temporal cover ------------------------------------------------------------
 
 def test_time_respecting_path_depends_on_order():

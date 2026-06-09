@@ -57,7 +57,10 @@ def walk_cover(A, K):
 def reachability_cover(A, K):
     n = A.shape[0]; R = np.eye(n, dtype=np.float32); P = np.eye(n, dtype=np.float32)
     for _ in range(K):
-        P = P @ A; R = ((R + P) > 0).astype(np.float32)
+        # reclamp P to 0/1 each step: this is reachability (does a length-t path
+        # exist), not a walk count, so it must not accumulate into a float overflow
+        # on larger, denser graphs.
+        P = ((P @ A) > 0).astype(np.float32); R = ((R + P) > 0).astype(np.float32)
     np.fill_diagonal(R, 0.0)
     return (R.sum(1) / max(n - 1, 1)).reshape(n, 1).astype(np.float32)
 

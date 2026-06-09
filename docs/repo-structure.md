@@ -35,6 +35,8 @@ Sieve demo:
 - `sieve_models.py`: models that combine covers with learnable per-cover gates.
 - `wl.py`: a Weisfeiler-Leman oracle (1-WL, 2-FWL, 3-FWL) to certify the WL level at
   which a graph pair becomes distinguishable.
+- `cfi.py`: Cai-Fuerer-Immerman graph-pair generator, for a non-SRG
+  3-WL-indistinguishable pair where the sieve cover provably breaks.
 
 Temporal demo:
 
