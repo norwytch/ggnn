@@ -81,6 +81,42 @@ def test_sieve_separates_what_walks_cannot():
     assert np.allclose(tri_S, 0.0)
 
 
+# ---- WL oracle: certify the pair's WL level ------------------------------------
+
+def test_wl_oracle_on_a_known_easy_pair():
+    # a triangle and a 3-path differ in degrees, so even 1-WL separates them
+    from src import wl
+    tri = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]], float)
+    path = np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]], float)
+    assert wl.distinguishes(tri, path, "1-WL")
+
+
+def test_rook_shrikhande_are_certified_3wl_indistinguishable():
+    from src import wl
+    R, S = srg_data.rook44(), srg_data.shrikhande()
+    assert not wl.distinguishes(R, S, "1-WL")
+    assert not wl.distinguishes(R, S, "3-WL")    # = 2-FWL, the disputed bar
+    assert wl.distinguishes(R, S, "4-WL")        # = 3-FWL separates it
+
+
+def test_generic_covers_fail_but_sieve_clears_the_3wl_pair():
+    R, S = srg_data.rook44(), srg_data.shrikhande()
+
+    def multiset(F):
+        return np.sort(np.round(np.asarray(F), 6), axis=0)
+
+    def separates(fa, fb):
+        a, b = multiset(fa), multiset(fb)
+        return a.shape != b.shape or not np.allclose(a, b)
+
+    # framework-generic covers cannot separate a 3-WL-indistinguishable pair
+    assert not separates(covers.walk_cover(R, 4), covers.walk_cover(S, 4))
+    assert not separates(covers.reachability_cover(R, 16),
+                         covers.reachability_cover(S, 16))
+    # the sieve cover clears it, via the injected substructure count
+    assert separates(covers.sieve_cover(R), covers.sieve_cover(S))
+
+
 # ---- temporal cover ------------------------------------------------------------
 
 def test_time_respecting_path_depends_on_order():

@@ -31,11 +31,11 @@ reachability cover up to `K` hops, exposing per node:
 An MLP over these solves the task exactly.
 
 The paper claims the idea scales, with cover/sieve operators separating graphs that
-defeat even 3-WL. That is the paper's claim, not this repo's. It is the strongest
-expressivity assertion in the withdrawn submission, and a reviewer disputed it, arguing
-the framework is bounded by 2-FWL. Since 2-FWL equals 3-WL, that contradicts the "beyond
-3-WL" reading. What this repo demonstrates is narrower and holds regardless of where the
-framework lands in the WL hierarchy.
+defeat even 3-WL. A reviewer disputed it, arguing the framework is bounded by 2-FWL
+(which equals 3-WL). Both can be read together once you separate the framework's generic
+covers from the sieve cover, and the sieve demo below settles it on a certified pair
+(`run_wl.py`): the generic covers stay 2-FWL-bounded, while the sieve cover clears
+beyond-3-WL only by counting a substructure chosen by hand.
 
 ## The sieve cover
 
@@ -45,10 +45,12 @@ python run_sieve.py
 
 The reachability cover does no work on the static task that a component count couldn't,
 so this demo picks a task where ordinary covers provably fail: distinguishing the 4x4
-Rook's graph from the Shrikhande graph. Both are SRG(16,6,2,2), non-isomorphic, and
-WL-indistinguishable. They are also cospectral, so their walk and closed-walk counts
-agree at every length. The script prints `Tr(A^t) = 0, 96, 192, 1536, 7680` for both, so
-any model built on walks or reachability is at chance.
+Rook's graph from the Shrikhande graph. Both are SRG(16,6,2,2), non-isomorphic, and a
+standard 3-WL-indistinguishable pair: `run_wl.py` certifies that 1-WL and 3-WL (2-FWL)
+cannot tell them apart and only 4-WL (3-FWL) can. They are also cospectral, so their
+walk and closed-walk counts agree at every length. The script prints
+`Tr(A^t) = 0, 96, 192, 1536, 7680` for both, so any model built on walks or reachability
+is at chance.
 
 The walk and reachability covers look outward, along the paths leaving a node. On a
 regular graph those counts are constant across nodes and identical between cospectral

@@ -33,8 +33,12 @@ and on this evidence that bet is unproven
 ([docs/expressivity-and-covers.md](docs/expressivity-and-covers.md#what-this-genuinely-adds)).
 
 The framework comes from an ICLR 2026 submission that was withdrawn, and whose
-strongest claim a reviewer disputed. The demos verify some separations, but not the
-disputed "beyond 3-WL" claim. See [References](docs/related-work.md#references).
+strongest claim a reviewer disputed. The sieve demo separates Rook vs Shrikhande, a
+3-WL-indistinguishable pair, so it does clear the beyond-3-WL bar, but only by
+hand-injecting the discriminating substructure (the GSN mechanism). The framework's
+generic covers stay 2-FWL-bounded, which is the reviewer's actual point. The WL levels
+here are certified, not asserted (see `run_wl.py`). See
+[References](docs/related-work.md#references).
 
 ## The task
 
@@ -59,6 +63,7 @@ python run_experiment.py     # static: 1-WL GNNs vs the reachability cover (~1 m
 python run_sieve.py          # sieve cover separates a cospectral SRG pair
 python run_temporal.py       # temporal cover: when event ordering is the signal
 python run_lanl.py --smoke   # real-data probe harness, on a synthetic slice
+python run_wl.py             # certify the Rook/Shrikhande WL level + cover table
 ```
 
 Each writes figures to `results/`, committed so they render here without running.

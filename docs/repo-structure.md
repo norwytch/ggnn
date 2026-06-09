@@ -33,6 +33,8 @@ Sieve demo:
 - `srg_data.py`: the Rook's vs Shrikhande SRG pair, cospectral and
   WL-indistinguishable.
 - `sieve_models.py`: models that combine covers with learnable per-cover gates.
+- `wl.py`: a Weisfeiler-Leman oracle (1-WL, 2-FWL, 3-FWL) to certify the WL level at
+  which a graph pair becomes distinguishable.
 
 Temporal demo:
 
@@ -53,5 +55,7 @@ LANL probe:
 - `run_experiment.py`: static demo, with the LogReg-on-components baseline. Writes
   `pr_auc.png` and `separation.png`.
 - `run_sieve.py`: sieve demo. Writes `sieve_acc.png`.
+- `run_wl.py`: certifies the Rook/Shrikhande WL level and tabulates which covers
+  separate it. No figure; prints two tables.
 - `run_temporal.py`: temporal demo plus a lead-time metric. Writes `temporal_*.png`.
 - `run_lanl.py`: real-data probe. Writes `lanl_pr.png`.
