@@ -33,7 +33,8 @@ and on this evidence that bet is unproven
 ([docs/expressivity-and-covers.md](docs/expressivity-and-covers.md#what-this-genuinely-adds)).
 
 The framework comes from an ICLR 2026 submission that was withdrawn, and whose
-strongest claim a reviewer disputed. Note that while the demos do verify some claims, they do not verify the claim that the same reviewer disputer about "beyond 3-WL" applicability. [References](docs/related-work.md#references).
+strongest claim a reviewer disputed. The demos verify some separations, but not the
+disputed "beyond 3-WL" claim. See [References](docs/related-work.md#references).
 
 ## The task
 
