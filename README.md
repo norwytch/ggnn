@@ -1,5 +1,7 @@
 # Grothendieck GNNs for Lateral-Movement Detection
 
+![Two access-graph estates that look identical locally; a 1-WL GNN cannot separate them, a reachability cover can](results/hero.png)
+
 A proof of concept exploring Grothendieck Graph Neural Networks (GGNNs) on a security
 task. Synthetic data, not a deployable detector.
 

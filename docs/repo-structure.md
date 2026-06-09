@@ -62,3 +62,4 @@ LANL probe:
   separate it. No figure; prints two tables.
 - `run_temporal.py`: temporal demo plus a lead-time metric. Writes `temporal_*.png`.
 - `run_lanl.py`: real-data probe. Writes `lanl_pr.png`.
+- `make_hero.py`: renders the README hero schematic to `results/hero.png` and `.svg`.
