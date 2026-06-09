@@ -17,8 +17,6 @@ exploits. Grothendieck-style covers can. So can much simpler tools, but then I w
 architecture, is what matters: once reachability is exposed, logistic regression on one
 scalar solves it.
 
-![PR-AUC](results/pr_auc.png)
-
 ## What is this?
 
 A clean demonstration of a known expressivity gap: 1-WL GNNs cannot see global
@@ -66,7 +64,8 @@ python run_lanl.py --smoke   # real-data probe harness, on a synthetic slice
 python run_wl.py             # certify the Rook/Shrikhande WL level + cover table
 ```
 
-Each writes figures to `results/`, committed so they render here without running.
+The demos write figures to `results/`, committed so they render here without running;
+`run_wl.py` prints tables instead.
 
 ## Demos
 
@@ -76,6 +75,7 @@ Each writes figures to `results/`, committed so they render here without running
 | sieve | swapping in the sieve cover separates Rook vs Shrikhande, a cospectral WL-indistinguishable pair | [expressivity-and-covers](docs/expressivity-and-covers.md#the-sieve-cover) |
 | temporal | identical static graphs, only event ordering differs; a temporal cover recovers it (PR-AUC ~0.83) | [temporal](docs/temporal.md) |
 | LANL probe | the honest test on real data, where a no-GNN novelty baseline is the bar | [lanl-probe](docs/lanl-probe.md) |
+| WL certification | certifies the Rook/Shrikhande and CFI pairs are 3-WL-indistinguishable, and shows where the sieve cover breaks | [expressivity-and-covers](docs/expressivity-and-covers.md#where-the-sieve-breaks) |
 
 ## Repository map
 
@@ -83,13 +83,14 @@ Each writes figures to `results/`, committed so they render here without running
 |---|---|
 | `src/` | the library: data generators, graph operators, cover algebra, and models. Everything the demos and notebooks import. |
 | `docs/` | written deep dives behind each demo. Read these for the why; the README is the map. |
-| `notebooks/` | a four-part guided tour (covers, static, sieve, temporal) with rendered outputs, so they read without running. |
+| `notebooks/` | a four-part guided tour (covers, static, sieve, temporal) plus a WL/CFI appendix, with rendered outputs, so they read without running. |
 | `results/` | committed figures the demos write, embedded in the README and docs. |
 | `tests/` | smoke tests asserting the structural invariants the demos depend on. |
 | `.github/` | CI: runs the tests and smoke-runs two demos on every push. |
 
 Run scripts live at the root: `run_experiment.py`, `run_sieve.py`, `run_temporal.py`,
-`run_lanl.py`. See [docs/repo-structure.md](docs/repo-structure.md) for a file-level map.
+`run_lanl.py`, `run_wl.py`. See [docs/repo-structure.md](docs/repo-structure.md) for a
+file-level map.
 
 ## Notebooks
 

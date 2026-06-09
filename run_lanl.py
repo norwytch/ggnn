@@ -37,6 +37,9 @@ from src.baselines import (
     History, baseline_features, cover_features, edge_labels,
     BASELINE_NAMES, COVER_NAMES,
 )
+from src.plotstyle import use_style, BLUE, REF
+
+use_style()
 
 FPR_TARGET = 0.001          # 0.1% -- a realistic alerting budget, not 1%
 COVER_K = 3
@@ -160,16 +163,16 @@ def main():
 
 
 def _plot_pr(y, results, base_rate):
-    fig, ax = plt.subplots(figsize=(8.2, 4.6))
-    for name, r in results.items():
+    fig, ax = plt.subplots(figsize=(7.6, 4.4))
+    for name, r, color in zip(results, results.values(), (REF, BLUE)):
         p, rc, _ = precision_recall_curve(y, r["score"])
-        ax.plot(rc, p, lw=2, label=f"{name} (AP={r['pr_auc']:.3f})")
-    ax.axhline(base_rate, ls="--", lw=1, color="#5f6368",
+        ax.plot(rc, p, lw=2, color=color, label=f"{name} (AP={r['pr_auc']:.3f})")
+    ax.axhline(base_rate, ls="--", lw=1, color="#b0b6bd",
                label=f"base rate ({base_rate:.3%})")
     ax.set_xlabel("recall"); ax.set_ylabel("precision"); ax.set_ylim(0, 1.02)
-    ax.set_title("LANL lateral movement: does the cover block beat novelty+degree?")
-    ax.legend(loc="upper right"); fig.tight_layout()
-    fig.savefig("results/lanl_pr.png", dpi=140); plt.close(fig)
+    ax.set_title("Does the cover block beat novelty + degree?")
+    ax.legend(loc="upper right")
+    fig.savefig("results/lanl_pr.png"); plt.close(fig)
 
 
 if __name__ == "__main__":

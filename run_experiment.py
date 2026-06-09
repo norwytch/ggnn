@@ -7,7 +7,7 @@ Classifies flat (one directed cycle) vs segmented (k disjoint cycles) access
 graphs under realistic class imbalance (~3% positives), trained on several graph
 sizes and tested on an unseen size. Reports PR-AUC and recall at a fixed 1% FPR
 over 3 seeds, plus a trivial LogReg-on-#components baseline, and writes
-results/pr_auc.png and results/separation.png.
+results/separation.png.
 """
 from __future__ import annotations
 import matplotlib; matplotlib.use("Agg")
@@ -21,7 +21,9 @@ from src.data import make_dataset
 from src.operators import gcn_norm, n_components, blast_radius
 from src.covers import walk_cover, reachability_cover
 from src.models import GCN, GIN, GCNPlus, CoverNet
+from src.plotstyle import use_style, BLUE, RED
 
+use_style()
 K_WALK, HIDDEN, EPOCHS, SEEDS = 4, 16, 80, (0, 1, 2)
 
 
@@ -108,41 +110,24 @@ def main():
         print(f"{name:24s} {pr:>8.3f} {rc:>14.2f}")
     print(f"\nbase rate (PR-AUC of a random ranker): {base_pr:.3f}\n")
 
-    _plot_prauc({n: pr for n, pr, _ in rows}, base_pr)
     _plot_separation()
-    print("Wrote results/pr_auc.png and results/separation.png")
-
-
-def _plot_prauc(prauc, base):
-    names = list(prauc); vals = [prauc[n] for n in names]
-    blind = {"GCN (1-WL)", "GIN (1-WL)"}
-    colors = ["#d93025" if n in blind else "#1a73e8" for n in names]
-    fig, ax = plt.subplots(figsize=(8.2, 4.4))
-    ax.bar(range(len(names)), vals, color=colors)
-    ax.axhline(base, ls="--", lw=1, color="#5f6368", label=f"base rate ({base:.2f})")
-    ax.set_xticks(range(len(names))); ax.set_xticklabels(names, rotation=12, ha="right")
-    ax.set_ylabel("PR-AUC"); ax.set_ylim(0, 1.05)
-    ax.set_title("Flat vs segmented under class imbalance, unseen size:\n"
-                 "1-WL GNNs sit at the base rate; the reachability signal solves it")
-    ax.legend(loc="center right"); fig.tight_layout()
-    fig.savefig("results/pr_auc.png", dpi=140); plt.close(fig)
+    print("Wrote results/separation.png")
 
 
 def _plot_separation():
     # blast radius per node for a representative flat vs segmented graph
     from src.data import _flat, _segmented
-    flat = np.concatenate([blast_radius(_flat(36))])
-    seg = np.concatenate([blast_radius(_segmented(36, 3))])
-    fig, ax = plt.subplots(figsize=(8.2, 4.0))
+    flat = blast_radius(_flat(36))
+    seg = blast_radius(_segmented(36, 3))
+    fig, ax = plt.subplots(figsize=(7.6, 4.0))
     bins = np.linspace(0, 1.02, 30)
-    ax.hist(seg, bins=bins, color="#1a73e8", alpha=0.8, label="segmented (k=3): ~1/k")
-    ax.hist(flat, bins=bins, color="#d93025", alpha=0.8, label="flat: ~1.0")
-    ax.set_xlabel("normalised blast radius (fraction of estate reachable)")
+    ax.hist(seg, bins=bins, color=BLUE, label="segmented (k=3): ~1/k")
+    ax.hist(flat, bins=bins, color=RED, label="flat: ~1.0")
+    ax.set_xlabel("blast radius (fraction of estate reachable)")
     ax.set_ylabel("nodes")
-    ax.set_title("The separating signal is global, not local:\n"
-                 "node blast radius is bimodal by class but invisible to 1-WL")
-    ax.legend(); fig.tight_layout()
-    fig.savefig("results/separation.png", dpi=140); plt.close(fig)
+    ax.set_title("Node blast radius is bimodal by class")
+    ax.legend(loc="upper center")
+    fig.savefig("results/separation.png"); plt.close(fig)
 
 
 if __name__ == "__main__":

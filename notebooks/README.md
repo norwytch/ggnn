@@ -2,7 +2,7 @@
 
 Four short, self-contained notebooks that explain what these networks are and how
 they apply the Grothendieck *cover* idea, building from intuition to the running
-code in `src/`. Read them in order:
+code in `src/`, plus an appendix. Read the first four in order:
 
 1. **[01_covers.ipynb](01_covers.ipynb)** — from neighborhoods to covers. Why
    message passing is bounded by 1-WL, what a cover is, the `Tr` homomorphism
@@ -19,8 +19,16 @@ code in `src/`. Read them in order:
    **temporal** cover where the sieve closure becomes the literal **causal past**
    of an event, and time-ordering is the lateral-movement signal.
 
+Appendix:
+
+5. **[05_wl_and_cfi.ipynb](05_wl_and_cfi.ipynb)** — certify the WL level with a small
+   oracle, then show where the sieve cover *breaks*: a second 3-WL-indistinguishable
+   pair (CFI over K4) the sieve cannot separate, because its win is the injected
+   substructure, not general expressivity.
+
 Each notebook imports the verified functions from `src/`, so it stays in sync with
-the command-line demos (`run_experiment.py`, `run_sieve.py`, `run_temporal.py`).
+the command-line demos (`run_experiment.py`, `run_sieve.py`, `run_temporal.py`,
+`run_wl.py`).
 
 ## Running them
 

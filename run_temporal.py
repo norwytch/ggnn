@@ -21,6 +21,9 @@ from src.temporal_data import make_dataset
 from src.temporal_ops import temporal_features, static_features, lead_time
 from src.temporal_models import stream_to_graph, make_mlp
 from src.models import GCN
+from src.plotstyle import use_style, BLUE, RED, REF
+
+use_style()
 
 EPOCHS, SEEDS = 60, (0, 1, 2)
 
@@ -96,27 +99,26 @@ def main():
 
 def _plot_prauc(means, base):
     names = list(means); vals = [means[n] for n in names]
-    colors = ["#d93025", "#d93025", "#1a73e8"]
-    fig, ax = plt.subplots(figsize=(8.2, 4.4))
+    colors = [RED, RED, BLUE]
+    fig, ax = plt.subplots(figsize=(7.6, 4.2))
     ax.bar(range(len(names)), vals, color=colors)
-    ax.axhline(base, ls="--", lw=1, color="#5f6368", label=f"base rate ({base:.2f})")
+    ax.axhline(base, ls="--", lw=1, color=REF, label=f"base rate ({base:.2f})")
     ax.set_xticks(range(len(names))); ax.set_xticklabels(names, rotation=10, ha="right")
     ax.set_ylabel("PR-AUC"); ax.set_ylim(0, 1.05)
-    ax.set_title("Identical static graphs, different event order:\n"
-                 "static models stay at the base rate; the temporal cover recovers the signal")
-    ax.legend(loc="upper left"); fig.tight_layout()
-    fig.savefig("results/temporal_pr_auc.png", dpi=140); plt.close(fig)
+    ax.set_title("Only the temporal cover recovers the ordering signal")
+    ax.legend(loc="upper left")
+    fig.savefig("results/temporal_pr_auc.png"); plt.close(fig)
 
 
 def _plot_lead(leads):
-    fig, ax = plt.subplots(figsize=(8.2, 4.0))
-    ax.hist(leads, bins=24, color="#1a73e8", alpha=0.85)
-    ax.axvline(0, ls="--", lw=1.2, color="#d93025", label="exfil time")
-    ax.set_xlabel("lead time = exfil time - temporal-path completion  (positive = detected early)")
+    fig, ax = plt.subplots(figsize=(7.6, 4.0))
+    ax.hist(leads, bins=24, color=BLUE)
+    ax.axvline(0, ls="--", lw=1.2, color=REF, label="exfil time")
+    ax.set_xlabel("lead time before exfil (positive = detected early)")
     ax.set_ylabel("attacks")
-    ax.set_title("A metric only time makes definable:\nhow early the temporal path completes before exfiltration")
-    ax.legend(); fig.tight_layout()
-    fig.savefig("results/temporal_lead.png", dpi=140); plt.close(fig)
+    ax.set_title("Every detected attack is caught before exfiltration")
+    ax.legend()
+    fig.savefig("results/temporal_lead.png"); plt.close(fig)
 
 
 if __name__ == "__main__":

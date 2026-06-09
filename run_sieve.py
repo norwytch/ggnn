@@ -7,11 +7,9 @@ Task: distinguish the 4x4 Rook's graph from the Shrikhande graph -- a pair of
 non-isomorphic SRG(16,6,2,2) graphs that defeat the Weisfeiler-Leman test and are
 cospectral. The walk/reachability covers (and any model built on them) are at
 chance by construction; adding the *sieve cover* to the basis separates them.
-Writes results/sieve_acc.png.
+Prints a results table (no figure; see run_wl.py for the WL/cover certification).
 """
 from __future__ import annotations
-import matplotlib; matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from sklearn.linear_model import LogisticRegression
@@ -107,22 +105,6 @@ def main():
     sg = results["SieveNet {walk,reach,SIEVE}"][1]
     print(f"\nSieveNet learned cover gates [walk, reach, sieve] = "
           f"[{sg[0]:.2f}, {sg[1]:.2f}, {sg[2]:.2f}]  (it leans on the sieve cover)\n")
-
-    _plot({k: v[0] for k, v in results.items()})
-    print("Wrote results/sieve_acc.png")
-
-
-def _plot(accs):
-    names = list(accs); vals = [accs[n] for n in names]
-    colors = ["#9aa0a6", "#9aa0a6", "#1a73e8"]
-    fig, ax = plt.subplots(figsize=(8, 4.4))
-    ax.bar(range(len(names)), vals, color=colors)
-    ax.axhline(0.5, ls="--", lw=1, color="#d93025", label="chance (0.5)")
-    ax.set_xticks(range(len(names))); ax.set_xticklabels(names, rotation=12, ha="right")
-    ax.set_ylabel("test accuracy"); ax.set_ylim(0, 1.05)
-    ax.set_title("Rook vs Shrikhande (cospectral SRGs, WL-indistinguishable):\nonly adding the sieve cover to the basis separates them")
-    ax.legend(loc="center right"); fig.tight_layout()
-    fig.savefig("results/sieve_acc.png", dpi=140); plt.close(fig)
 
 
 if __name__ == "__main__":

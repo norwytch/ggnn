@@ -63,8 +63,6 @@ a single 6-cycle. Same C6-vs-2C3 motif as the static task, now local rather than
 Both are still covers under the same `Tr` homomorphism; the sieve cover is just a more
 refined choice.
 
-![sieve](../results/sieve_acc.png)
-
 `WalkCoverNet` and the trivial baseline sit at chance; `SieveNet`, the same architecture
 plus the sieve cover, reaches 100%. The gap is entirely the cover choice.
 
