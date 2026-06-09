@@ -1,11 +1,10 @@
-# Cover-Based GNNs for Lateral-Movement Detection
+# Grothendieck GNNs for Lateral-Movement Detection
 
 A proof of concept exploring Grothendieck Graph Neural Networks (GGNNs) on a security
 task. Synthetic data, not a deployable detector.
 
 Standard GNNs cannot recover the blast-radius signal a lateral-movement attacker
-exploits. Grothendieck-style covers can. So can much simpler tools, which is the catch
-this repo is upfront about.
+exploits. Grothendieck-style covers can. So can much simpler tools, but then I wouldn't have an excuse to make this repo. 
 
 | model | PR-AUC | recall @ 1% FPR |
 |---|---|---|
@@ -20,12 +19,11 @@ scalar solves it.
 
 ![PR-AUC](results/pr_auc.png)
 
-## What this is
+## What is this?
 
 A clean demonstration of a known expressivity gap: 1-WL GNNs cannot see global
 reachability or tell cospectral graphs apart. It is read through a lateral-movement
-lens, with runnable code, rendered notebooks, and a pre-registered real-data probe. It
-bridges three literatures that rarely cite each other (see
+lens, with runnable code, rendered notebooks, and a pre-registered real-data probe. Related research is here (see
 [docs/related-work.md](docs/related-work.md)).
 
 It is not evidence that cover-based GNNs beat existing tools. Every task here is also
@@ -35,8 +33,7 @@ and on this evidence that bet is unproven
 ([docs/expressivity-and-covers.md](docs/expressivity-and-covers.md#what-this-genuinely-adds)).
 
 The framework comes from an ICLR 2026 submission that was withdrawn, and whose
-strongest claim a reviewer disputed. The demos stand on their own; the "beyond 3-WL"
-framing does not ([References](docs/related-work.md#references)).
+strongest claim a reviewer disputed. Note that while the demos do verify some claims, they do not verify the claim that the same reviewer disputer about "beyond 3-WL" applicability. [References](docs/related-work.md#references).
 
 ## The task
 
@@ -65,7 +62,7 @@ python run_lanl.py --smoke   # real-data probe harness, on a synthetic slice
 
 Each writes figures to `results/`, committed so they render here without running.
 
-## The demos
+## Demos
 
 | demo | what it shows | deep dive |
 |---|---|---|
