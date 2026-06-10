@@ -63,10 +63,10 @@ def main():
     # ---- column 1: two locally-identical estates ----------------------------
     header(ax, 3.0, 6.6, "TWO ESTATES  ·  LOCALLY IDENTICAL")
     draw_cycle(ax, (3.0, 4.9), 1.15, 12)
-    ax.text(3.0, 3.35, "flat — one cycle, reach all", ha="center", color=INK, fontsize=12)
+    ax.text(3.0, 3.35, "flat: one cycle, reach all", ha="center", color=INK, fontsize=12)
     draw_cycle(ax, (2.0, 1.7), 0.78, 6)
     draw_cycle(ax, (4.0, 1.7), 0.78, 6)
-    ax.text(3.0, 0.35, "segmented — k enclaves, reach one", ha="center", color=INK, fontsize=12)
+    ax.text(3.0, 0.35, "segmented: k enclaves, reach one", ha="center", color=INK, fontsize=12)
 
     # ---- column 2: the two lenses -------------------------------------------
     header(ax, 9.0, 6.6, "TWO LENSES")
@@ -99,8 +99,10 @@ def main():
     ax.text(13.25, 1.7, "separated", ha="left", color=BLUE, fontsize=13, fontweight="bold")
 
     # ---- caption ------------------------------------------------------------
-    ax.text(8.0, -0.15, "Standard GNNs can't separate these estates. A Grothendieck cover can.",
+    ax.text(8.0, -0.05, "Standard GNNs can't separate these estates. A Grothendieck cover can.",
             ha="center", color=INK, fontsize=13.5)
+    ax.text(8.0, -0.6, "So can a one-line component count: the signal, not the architecture.",
+            ha="center", color=MUTE, fontsize=11)
 
     fig.savefig("results/hero.png", bbox_inches="tight", pad_inches=0.3)
     fig.savefig("results/hero.svg", bbox_inches="tight", pad_inches=0.3)
