@@ -1,5 +1,9 @@
 # Grothendieck in the Shell: Sheaves, Covers, and Sieves for Lateral-Movement Detection
 
+[![ci](https://github.com/norwytch/ggnn/actions/workflows/ci.yml/badge.svg)](https://github.com/norwytch/ggnn/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![python](https://img.shields.io/badge/python-3.10%20%7C%203.11-blue.svg)](requirements.txt)
+
 ![Two access-graph estates that look identical locally; a 1-WL GNN cannot separate them, a reachability cover can](results/hero.png)
 
 This repo is the central station for my obsession with applying category and sheaf theory to machine learning and security. It started as an experiment to try and replicate a paper about cover-based GNNs with synthetic data and has now morphed into a small laboratory for anything involving Grothendieck and security. 

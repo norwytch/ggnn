@@ -25,5 +25,11 @@ jobs:
         run: pytest -q
       - name: Smoke-run the static demo
         run: python run_experiment.py
+      - name: Smoke-run the sieve demo
+        run: python run_sieve.py
+      - name: Smoke-run the temporal demo
+        run: python run_temporal.py
+      - name: Smoke-run the WL certification
+        run: python run_wl.py
       - name: Smoke-run the LANL probe (synthetic slice)
         run: python run_lanl.py --smoke
