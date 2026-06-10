@@ -2,7 +2,7 @@
 
 Four short, self-contained notebooks that explain what these networks are and how
 they apply the Grothendieck *cover* idea, building from intuition to the running
-code in `src/`, plus an appendix. Read the first four in order:
+code in `src/`, plus three appendices. Read the first four in order:
 
 1. **[01_covers.ipynb](01_covers.ipynb)** — from neighborhoods to covers. Why
    message passing is bounded by 1-WL, what a cover is, the `Tr` homomorphism
@@ -25,6 +25,15 @@ Appendix:
    oracle, then show where the sieve cover *breaks*: a second 3-WL-indistinguishable
    pair (CFI over K4) the sieve cannot separate, because its win is the injected
    substructure, not general expressivity.
+6. **[06_sheaves.ipynb](06_sheaves.ipynb)** — the third word in the title. Builds the
+   cellular **sheaf** Laplacian, shows its kernel equals the number of components (the
+   blast-radius signal), then shows why a learned sheaf network still cannot use it on
+   featureless graphs and lands the `SheafNN` at chance.
+7. **[07_lanl_probe.ipynb](07_lanl_probe.ipynb)** — the **real-data** test. Runs the
+   actual LANL harness on a synthetic slice (the dataset is gated), explaining the
+   novelty baseline, warm-up, and continuous-history split, then reports the committed
+   real-data numbers: a pre-registered null where neither the cover nor a trained sheaf
+   NN beats novelty.
 
 Each notebook imports the verified functions from `src/`, so it stays in sync with
 the command-line demos (`run_experiment.py`, `run_sieve.py`, `run_temporal.py`,

@@ -67,6 +67,18 @@ def test_srg_pair_is_cospectral_and_6_regular():
     assert not np.array_equal(R, S)
 
 
+def test_sheaf_nn_forward_runs():
+    # the Sheaf NN baseline should at least produce a finite graph-level logit; its
+    # at-chance accuracy on the featureless tasks is shown by run_experiment / run_sieve
+    import torch
+    from src import sheaf
+    A = data._flat(12)
+    g = {"Asym": torch.from_numpy(((A + A.T) > 0).astype(np.float32)),
+         "x": torch.from_numpy(np.ones((12, 1), np.float32))}
+    out = sheaf.SheafNN(in_dim=1, d=3, h=8, layers=2)(g)
+    assert out.reshape(-1).shape == (1,) and torch.isfinite(out).all()
+
+
 def test_sieve_separates_what_walks_cannot():
     R, S = srg_data.rook44(), srg_data.shrikhande()
     # walk traces (closed-walk counts) agree -> walk cover is blind

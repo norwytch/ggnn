@@ -10,7 +10,7 @@ root `run_*.py` ties it together and writes a figure to `results/`.
 |---|---|---|
 | `src/` | library code: data generators, operators, cover algebra, models | imported by every demo and notebook; nothing here runs on its own |
 | `docs/` | prose deep dives behind each demo | the why; the README is the map |
-| `notebooks/` | four-part tour plus a WL/CFI appendix, rendered outputs | the same ideas built from scratch, readable without running |
+| `notebooks/` | four-part tour plus WL/CFI and sheaf appendices, rendered outputs | the same ideas built from scratch, readable without running |
 | `results/` | committed PNG figures the demos write | embedded in README and docs |
 | `tests/` | pytest smoke tests | assert the structural invariants the demos rely on |
 | `.github/` | CI workflow | runs tests and smoke-runs two demos on push |
@@ -25,6 +25,10 @@ Static demo:
   reachable-set counts, blast radius.
 - `models.py`: GCN and GIN (1-WL), GCNPlus (GCN plus the reachability feature), and
   CoverNet (an MLP over cover features).
+- `sheaf.py`: a Sheaf NN baseline (Hansen & Gebhart 2020), sheaf-Laplacian diffusion. A
+  graph-level `SheafNN` for the static/SRG demos (sits at the base rate, since featureless
+  graphs give its restriction maps nothing to learn from), and a sparse, edge-level
+  `SheafEdgeScorer` trained end-to-end for the LANL probe.
 
 Sieve demo:
 

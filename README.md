@@ -1,46 +1,16 @@
-# Grothendieck GNNs for Lateral-Movement Detection
+# Grothendieck in the Shell: Sheaves, Covers, and Sieves for Lateral-Movement Detection
 
 ![Two access-graph estates that look identical locally; a 1-WL GNN cannot separate them, a reachability cover can](results/hero.png)
 
-A proof of concept exploring Grothendieck Graph Neural Networks (GGNNs) on a security
-task. Synthetic data, not a deployable detector.
+This repo is the central station for my obsession with applying category and sheaf theory to machine learning and security. It started as an experiment to try and replicate a paper about cover-based GNNs with synthetic data and has now morphed into a small laboratory for anything involving Grothendieck and security. 
 
-Standard GNNs cannot recover the blast-radius signal a lateral-movement attacker
-exploits. Grothendieck-style covers can. So can much simpler tools, but then I wouldn't have an excuse to make this repo. 
+The driving question is whether changing the topology a GNN sees
+(via covers, sieves, or sheaves) can help it recover a signal (the blast radius a lateral-movement attacker exploits) a standard message-passing GNN
+provably cannot? The immediate follow-up is whether it beats the security practitioner standard for each task (LogReg on counting components, time-respecting reachability, edge novelty). It is tested first
+on synthetic graphs built to isolate the gap, then on the LANL ARCS authentication
+dataset.
 
-| model | PR-AUC | recall @ 1% FPR |
-|---|---|---|
-| GCN, GIN (1-WL) | ~0.03 (= base rate) | 0 |
-| LogReg on # components | 1.0 | 1.0 |
-| GCN + reachability feature | 1.0 | 1.0 |
-| CoverNet (cover features) | 1.0 | 1.0 |
-
-~3% positives, tested on a graph size never seen in training. The signal, not the
-architecture, is what matters: once reachability is exposed, logistic regression on one
-scalar solves it.
-
-## What is this?
-
-A clean demonstration of a known expressivity gap: 1-WL GNNs cannot see global
-reachability or tell cospectral graphs apart. It is read through a lateral-movement
-lens, with runnable code, rendered notebooks, and a pre-registered real-data probe. Related research is here (see
-[docs/related-work.md](docs/related-work.md)).
-
-It is not evidence that cover-based GNNs beat existing tools. Every task here is also
-solved by something simpler: component counts, substructure counts, or edge novelty.
-The framework's real bet is learning which structure matters instead of hand-coding it
-([docs/expressivity-and-covers.md](docs/expressivity-and-covers.md#what-this-genuinely-adds)),
-and the one time it was tested on real data where the signal was not built in, it lost
-to a no-GNN novelty baseline (the [LANL probe](docs/lanl-probe.md) returned the
-pre-registered null).
-
-The framework comes from an ICLR 2026 submission that was withdrawn, and whose
-strongest claim a reviewer disputed. The sieve demo separates Rook vs Shrikhande, a
-3-WL-indistinguishable pair, so it does clear the beyond-3-WL bar, but only by
-hand-injecting the discriminating substructure (the GSN mechanism). The framework's
-generic covers stay 2-FWL-bounded, which is the reviewer's actual point. The WL levels
-here are certified, not asserted (see `run_wl.py`). See
-[References](docs/related-work.md#references).
+This repo shows that covers and sieves can recover the signal standard GNNs cannot. A sheaf NN cannot: the sheaf Laplacian is the morally right tool, but on featureless graphs the network has nothing to learn from. And none of them beats the simpler tool built for each task. Alas! Beauty sometimes earns its place in production, and sometimes utility wins instead.
 
 ## The task
 
@@ -56,6 +26,29 @@ look identical locally but differ in blast radius.
 A flat estate endangers the whole network if compromised, a segmented one only its
 enclave. The two are 1-WL-equivalent by construction, which is why a standard GNN
 cannot separate them. See [docs/expressivity-and-covers.md](docs/expressivity-and-covers.md).
+
+## Tests and Findings
+
+| question | finding |
+|---|---|
+| Can a 1-WL GNN tell a flat estate (compromise one host, reach the whole network) from a segmented one (reach only an enclave)? | No, base rate. But a one-line connected-components count nails it, and so does a reachability cover. The signal, not the architecture. |
+| Does the framework reach "beyond 3-WL", as the source paper claims? | Only by hand-injecting the discriminating substructure (the GSN trick); the generic covers stay 2-FWL-bounded. The WL levels are certified by an in-repo oracle, not asserted (`run_wl.py`). |
+| Does a more sophisticated architecture, a sheaf neural network, help? | No. Base rate on the synthetic tasks; on featureless graphs its restriction maps have nothing to learn from. |
+| On real lateral-movement data (LANL), does any of it beat a no-GNN novelty baseline? | No. A pre-registered null across two red-team windows, for both the cover and a trained sheaf NN. |
+
+The static task in numbers (the first row above):
+
+| model | PR-AUC | recall @ 1% FPR |
+|---|---|---|
+| GCN, GIN (1-WL) | ~0.03 (= base rate) | 0 |
+| SheafNN (2020) | ~0.03 (= base rate) | 0 |
+| LogReg on # components | 1.0 | 1.0 |
+| GCN + reachability feature | 1.0 | 1.0 |
+| CoverNet (cover features) | 1.0 | 1.0 |
+
+~3% positives, tested on a graph size never seen in training. Once reachability is
+exposed, logistic regression on one scalar solves it; the sheaf NN sits at the base rate
+alongside the plain GNNs.
 
 ## Quickstart
 
@@ -78,7 +71,7 @@ The demos write figures to `results/`, committed so they render here without run
 | static | 1-WL GNNs sit at the base rate; the reachability cover (or a one-line component count) solves it | [expressivity-and-covers](docs/expressivity-and-covers.md) |
 | sieve | swapping in the sieve cover separates Rook vs Shrikhande, a cospectral WL-indistinguishable pair | [expressivity-and-covers](docs/expressivity-and-covers.md#the-sieve-cover) |
 | temporal | identical static graphs, only event ordering differs; a temporal cover recovers it (PR-AUC ~0.83) | [temporal](docs/temporal.md) |
-| LANL probe | the honest test on real data: across two red-team windows the cover does not beat a no-GNN novelty baseline (the pre-registered null) | [lanl-probe](docs/lanl-probe.md) |
+| LANL probe | the honest test on real data: across two red-team windows neither the cover nor a trained sheaf NN beats a no-GNN novelty baseline (the pre-registered null) | [lanl-probe](docs/lanl-probe.md) |
 | WL certification | certifies the Rook/Shrikhande and CFI pairs are 3-WL-indistinguishable, and shows where the sieve cover breaks | [expressivity-and-covers](docs/expressivity-and-covers.md#where-the-sieve-breaks) |
 
 ## Repository map
@@ -87,7 +80,7 @@ The demos write figures to `results/`, committed so they render here without run
 |---|---|
 | `src/` | the library: data generators, graph operators, cover algebra, and models. Everything the demos and notebooks import. |
 | `docs/` | written deep dives behind each demo. Read these for the why; the README is the map. |
-| `notebooks/` | a four-part guided tour (covers, static, sieve, temporal) plus a WL/CFI appendix, with rendered outputs, so they read without running. |
+| `notebooks/` | a four-part guided tour (covers, static, sieve, temporal) plus appendices on WL/CFI and sheaves, with rendered outputs, so they read without running. |
 | `results/` | committed figures the demos write, embedded in the README and docs. |
 | `tests/` | smoke tests asserting the structural invariants the demos depend on. |
 | `.github/` | CI: runs the tests and smoke-runs two demos on every push. |
@@ -104,19 +97,17 @@ Start with [01_covers](notebooks/01_covers.ipynb). Kernel setup is in
 
 ## Limitations
 
-A minimal demonstration of one mechanism, not a deployable detector.
+A minimal demonstration of one mechanism, not a deployable detector. Beyond the nulls in
+the findings table above:
 
-- Structure must be the signal. The task is 1-WL-equivalent by construction. When
-  node or edge features already carry the signal, a plain GCN matches this and the
-  advantage disappears.
-- Simpler tools tie it. On every task a classical method matches the cover. The unique
-  value would be learning which cover matters, which these pre-rigged tasks cannot show.
-- Bounded for tractability. Reachability operators trend toward dense, ~O(n^3)
-  computation. Real estates would need sparse, ego-net-restricted covers.
-- Static and synthetic for the core demos. The [LANL probe](docs/lanl-probe.md) is the
-  one real-data test, and it returned the pre-registered null: the cover does not beat a
-  novelty baseline once the signal isn't built in.
-- Built on a withdrawn, disputed source. See [References](docs/related-work.md#references).
+- Structure must be the signal. The synthetic tasks are 1-WL-equivalent by construction;
+  when node or edge features already carry the signal, a plain GCN matches the cover and
+  the gap closes.
+- Scale. The demos use dense reachability operators (~O(n^3)); only the LANL harness was
+  made sparse. Real estates would need sparse, ego-net-restricted covers throughout.
+
+The source framework is from a withdrawn, disputed ICLR 2026 preprint, so treat its
+claims as unrefereed (see [References](docs/related-work.md#references)). 
 
 ## More
 
@@ -125,5 +116,3 @@ A minimal demonstration of one mechanism, not a deployable detector.
 - [Real-data probe (LANL)](docs/lanl-probe.md)
 - [Related work and references](docs/related-work.md)
 - [Repository structure](docs/repo-structure.md)
-
-Built as a portfolio proof of concept. Synthetic data only.

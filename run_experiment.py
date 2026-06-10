@@ -21,6 +21,7 @@ from src.data import make_dataset
 from src.operators import gcn_norm, n_components, blast_radius
 from src.covers import walk_cover, reachability_cover
 from src.models import GCN, GIN, GCNPlus, CoverNet
+from src.sheaf import SheafNN
 from src.plotstyle import use_style, BLUE, RED
 
 use_style()
@@ -70,6 +71,7 @@ def main():
     cfgs = {
         "GCN (1-WL)":            (GCN,      {"in_dim": 1, "h": HIDDEN}),
         "GIN (1-WL)":            (GIN,      {"in_dim": 1, "h": HIDDEN}),
+        "SheafNN (2020)":        (SheafNN,  {"in_dim": 1, "d": 3, "h": HIDDEN, "layers": 2}),
         "GCNPlus (+ reach)":     (GCNPlus,  {"in_dim": 2, "h": HIDDEN}),
         "CoverNet":              (CoverNet, {"in_dim": None, "h": HIDDEN}),
     }

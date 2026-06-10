@@ -16,6 +16,15 @@ reach (about 1.0 when flat, about 1/k when split into k enclaves), equivalently 
 number of connected components. This is a property of the whole graph, not any
 neighbourhood, so a 1-WL model cannot recover it.
 
+A more sophisticated architecture does not rescue this. `run_experiment.py` and
+`run_sieve.py` include a Sheaf NN baseline (Hansen & Gebhart 2020, the network form of
+the Hansen-Ghrist 2019 sheaf-Laplacian theory). It sits at the base rate on both the
+flat-vs-segmented task and the Rook-vs-Shrikhande pair. The reason is structural: a
+sheaf conditions its per-edge restriction maps on features, and here the features are
+constant and the graphs vertex-transitive, so the sheaf is homogeneous and its Laplacian
+factors as L_graph (x) M, i.e. multi-channel graph diffusion. The obstruction is the
+missing signal, not the model. See `src/sheaf.py`.
+
 ![separation](../results/separation.png)
 
 ## What a cover is

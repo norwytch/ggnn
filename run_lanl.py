@@ -29,6 +29,7 @@ import argparse
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, precision_recall_curve, roc_curve
 from sklearn.pipeline import make_pipeline
@@ -40,6 +41,7 @@ from src.baselines import (
     BASELINE_NAMES, COVER_NAMES,
 )
 from src.plotstyle import use_style, BLUE, REF
+from src.sheaf import SheafEdgeScorer, sparse_norm_adj
 
 use_style()
 
@@ -92,6 +94,45 @@ def fit_score(Xtr, ytr, Xte):
         LogisticRegression(class_weight="balanced", max_iter=5000))
     clf.fit(Xtr, ytr)
     return clf.predict_proba(Xte)[:, 1]
+
+
+def sheaf_edge_scores(windows, split_k, red, seed=0, epochs=25):
+    """Train the end-to-end sheaf edge detector on the train windows and return a score
+    for every edge, in the same window order assemble() used (so it aligns with y)."""
+    torch.manual_seed(seed)
+    model = SheafEdgeScorer(in_dim=2, d=2, h=8, layers=2)
+    opt = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=1e-4)
+
+    cache = []                                   # per window: (P, X, edge_index, labels)
+    for w in windows:
+        A = w.A
+        X = np.stack([np.log1p(A.sum(1)), np.log1p(A.sum(0))], 1).astype(np.float32)
+        ei = np.array([[w.index[a.src_comp] for a in w.edges],
+                       [w.index[a.dst_comp] for a in w.edges]], np.int64)
+        cache.append((sparse_norm_adj(A), torch.from_numpy(X),
+                      torch.from_numpy(ei), torch.from_numpy(edge_labels(w, red).astype(np.float32))))
+
+    pos = sum(float(cache[i][3].sum()) for i in range(split_k))
+    tot = sum(len(cache[i][3]) for i in range(split_k))
+    pw = torch.tensor([(tot - pos) / max(pos, 1.0)], dtype=torch.float32)
+    lossf = torch.nn.BCEWithLogitsLoss(pos_weight=pw)
+    for _ in range(epochs):
+        model.train()
+        for i in range(split_k):
+            P, X, ei, lab = cache[i]
+            if ei.shape[1] == 0:
+                continue
+            opt.zero_grad()
+            lossf(model(P, X, ei), lab).backward()
+            opt.step()
+
+    model.eval()
+    out = []
+    with torch.no_grad():
+        for P, X, ei, lab in cache:
+            out.append(np.zeros(0, np.float32) if ei.shape[1] == 0
+                       else torch.sigmoid(model(P, X, ei)).numpy())
+    return np.concatenate(out)
 
 
 def _stream_with_warmup(auth_iter, t_start, history):
@@ -169,6 +210,16 @@ def main():
             "alerts": alerts_per_day(yte, s, n_days),
             "score": s,
         }
+
+    # an actual learned sheaf NN, end-to-end on the windowed access graphs (no novelty
+    # features, purely structural), to see whether a topological model beats the bar
+    sh = sheaf_edge_scores(windows, split_k, red)[~is_train]
+    results["sheaf NN (end-to-end)"] = {
+        "pr_auc": average_precision_score(yte, sh),
+        "recall": recall_at_fpr(yte, sh),
+        "alerts": alerts_per_day(yte, sh, n_days),
+        "score": sh,
+    }
 
     base_rate = yte.mean()
     print(f"\nLANL edge-level lateral-movement task")

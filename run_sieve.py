@@ -38,6 +38,29 @@ def collate(items, idx, use):
     return [torch.cat(o) for o in out], torch.cat(bt), len(idx)
 
 
+def _sheaf_srg_acc(As, y, tr, te):
+    """Train the Sheaf NN directly on the SRG graphs and return mean test accuracy."""
+    from src.sheaf import SheafNN
+    g = [{"Asym": torch.from_numpy(((A + A.T) > 0).astype(np.float32)),
+          "x": torch.from_numpy(np.ones((A.shape[0], 1), np.float32))} for A in As]
+    yt = torch.from_numpy(y.astype(np.float32))
+    accs = []
+    for seed in SEEDS:
+        torch.manual_seed(seed)
+        m = SheafNN(in_dim=1, d=3, h=HIDDEN, layers=2)
+        opt = torch.optim.Adam(m.parameters(), lr=1e-2, weight_decay=1e-4)
+        lossf = torch.nn.BCEWithLogitsLoss()
+        for _ in range(EPOCHS):
+            m.train(); opt.zero_grad()
+            logits = torch.stack([m(g[i]).squeeze() for i in tr])
+            lossf(logits, yt[tr]).backward(); opt.step()
+        m.eval()
+        with torch.no_grad():
+            pred = (torch.stack([m(g[i]).squeeze() for i in te]).sigmoid() > 0.5).long()
+            accs.append((pred == yt[te].long()).float().mean().item())
+    return float(np.mean(accs))
+
+
 def train_eval(use, dims, items, y, tr, te, seed):
     torch.manual_seed(seed)
     model = CoverCombiner(dims, HIDDEN)
@@ -99,6 +122,11 @@ def main():
     for name, (use, d) in cfgs.items():
         accs, gates = zip(*[train_eval(use, d, items, y, tr, te, s) for s in SEEDS])
         results[name] = (float(np.mean(accs)), np.mean(gates, 0))
+
+    # Sheaf NN baseline (Hansen & Gebhart 2020): a more sophisticated architecture, but
+    # on featureless regular cospectral graphs its restriction maps have nothing to bite
+    # on, so it should land at chance like any walk/reachability model.
+    results["SheafNN (2020)"] = (_sheaf_srg_acc(As, y, tr, te), None)
 
     for name, (acc, extra) in results.items():
         print(f"{name:30s} {acc:>9.3f}")
