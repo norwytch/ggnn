@@ -95,21 +95,10 @@ file-level map.
 Start with [01_covers](notebooks/01_covers.ipynb). Kernel setup is in
 [notebooks/README.md](notebooks/README.md).
 
-## Limitations
-
-A minimal demonstration of one mechanism, not a deployable detector. Beyond the nulls in
-the findings table above:
-
-- Structure must be the signal. The synthetic tasks are 1-WL-equivalent by construction;
-  when node or edge features already carry the signal, a plain GCN matches the cover and
-  the gap closes.
-- Scale. The demos use dense reachability operators (~O(n^3)); only the LANL harness was
-  made sparse. Real estates would need sparse, ego-net-restricted covers throughout.
+## More
 
 The source framework is from a withdrawn, disputed ICLR 2026 preprint, so treat its
 claims as unrefereed (see [References](docs/related-work.md#references)). 
-
-## More
 
 - [Expressivity and covers](docs/expressivity-and-covers.md)
 - [When time is the signal](docs/temporal.md)
