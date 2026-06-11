@@ -10,7 +10,7 @@ This repo is the central station for my obsession with applying category and she
 
 The driving question is whether changing the topology a GNN sees
 (via covers, sieves, or sheaves) can help it recover a signal (the blast radius a lateral-movement attacker exploits) a standard message-passing GNN
-provably cannot? The immediate follow-up is whether it beats the security practitioner standard for each task (LogReg on counting components, time-respecting reachability, edge novelty). It is tested first
+provably cannot. The immediate follow-up is whether it beats the security practitioner standard for each task (LogReg on counting components, time-respecting reachability, edge novelty). It is tested first
 on synthetic graphs built to isolate the gap, then on the LANL ARCS authentication
 dataset.
 
