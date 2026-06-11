@@ -14,7 +14,7 @@ provably cannot. The immediate follow-up is whether it beats the security practi
 on synthetic graphs built to isolate the gap, then on the LANL ARCS authentication
 dataset.
 
-This repo shows that covers and sieves can recover the signal standard GNNs cannot. A sheaf NN cannot: the sheaf Laplacian is the morally right tool, but on featureless graphs the network has nothing to learn from. And none of them beats the simpler tool built for each task. Alas! Beauty sometimes earns its place in production, and sometimes utility wins instead.
+This repo shows that covers and sieves can recover the signal standard GNNs cannot. A sheaf NN cannot: the sheaf Laplacian is the morally right tool, but these tasks are featureless by design (every node carries the same constant feature, which is what makes them 1-WL-equivalent), so a network that learns its restriction maps from features has nothing to specialize on. And none of them beats the simpler tool built for each task. Alas! Beauty sometimes earns its place in production, and sometimes utility wins instead.
 
 ## The task
 
