@@ -8,3 +8,6 @@ __pycache__/
 lanl/
 *.txt.gz
 lanl_*.log
+# palimpsest: downloaded heterophily datasets, never commit
+data/
+*.npz
