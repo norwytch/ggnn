@@ -13,9 +13,9 @@ number is trusted, so a negative result is reported rather than dropped.
 The data is LANL's Comprehensive, Multi-Source Cyber-Security Events (Kent, 2015): 58
 days of authentication events with a small set of labelled red-team logons. Download it
 yourself from [csr.lanl.gov](https://csr.lanl.gov/data/cyber1/); the harness does not
-fetch it. The task is edge-level: given an authentication `src -> dst` in a time window,
-was it red-team lateral movement? The split is temporal, training on early days and
-testing on later ones, and novelty is only ever computed against the past.
+fetch it. The task is edge-level: classify whether an authentication `src -> dst` in a
+time window was red-team lateral movement. The split is temporal, training on early days
+and testing on later ones, and novelty is only ever computed against the past.
 
 The baseline is the honest part. A real authentication graph is essentially one giant
 connected component, so counting components or measuring global reachability, the trick

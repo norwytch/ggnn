@@ -7,7 +7,11 @@ __pycache__/
 # LANL dataset: large (~11 GB) and downloaded by the user under LANL's terms; never commit it
 lanl/
 *.txt.gz
-lanl_*.log
 # palimpsest: downloaded heterophily datasets, never commit
 data/
 *.npz
+# scratch: run logs and notebook-execution temp dirs
+*.log
+.nbtmp/
+# internal planning, not part of the published repo
+palimpsest-proposal.md

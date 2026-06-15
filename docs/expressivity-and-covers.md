@@ -86,8 +86,8 @@ not a verbatim copy of the paper's construction, which public sources under-spec
 
 ## Where the sieve breaks
 
-The sieve win on Rook/Shrikhande raises a fair question: is the sieve cover a general
-beyond-3-WL separator, or did it just happen to look at the substructure that differs?
+The sieve win on Rook/Shrikhande raises a fair question about whether the sieve cover is
+a general beyond-3-WL separator or just happened to look at the substructure that differs.
 `run_wl.py` settles it with a second pair at the same WL level, built from a different
 mechanism: a Cai-Fuerer-Immerman (CFI) construction over K4 (`src/cfi.py`). The oracle
 certifies the CFI pair is also 3-WL-indistinguishable and 4-WL-distinguishable, exactly

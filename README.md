@@ -6,106 +6,91 @@
 
 ![Two access-graph estates that look identical locally; a 1-WL GNN cannot separate them, a reachability cover can](results/hero.png)
 
-This repo is the central station for my obsession with applying category and sheaf theory to machine learning and security. It started as an experiment to try and replicate a paper about cover-based GNNs with synthetic data and has now morphed into a small laboratory for anything involving Grothendieck and security. 
+This started as an attempt to replicate a paper about cover-based graph neural networks and turned into a small laboratory for one stubborn question: whether changing the topology a network sees, through covers, sieves, sheaves, the whole Grothendieck toolbox, can recover a signal a standard model provably cannot, namely the blast radius a lateral-movement attacker exploits.
 
-The driving question is whether changing the topology a GNN sees
-(via covers, sieves, or sheaves) can help it recover a signal (the blast radius a lateral-movement attacker exploits) a standard message-passing GNN
-provably cannot. The immediate follow-up is whether it beats the security practitioner standard for each task (LogReg on counting components, time-respecting reachability, edge novelty). It is tested first
-on synthetic graphs built to isolate the gap, then on the LANL ARCS authentication
-dataset.
+The honest answer, which the rest of this README earns rather than asserts: the fancy machinery can recover the signal a plain GNN misses, but it never beats the boring tool a practitioner would already reach for. Not on the synthetic tasks, not on real authentication logs, not even on the featureful data where sheaves are supposed to shine. Beauty sometimes earns its place in production, and sometimes utility wins instead. This repo is mostly about saying so out loud, carefully, instead of publishing the one run where it looked good.
 
-This repo shows that covers and sieves can recover the signal standard GNNs cannot. A sheaf NN cannot: the sheaf Laplacian is the morally right tool, but these tasks are featureless by design (every node carries the same constant feature, which is what makes them 1-WL-equivalent), so a network that learns its restriction maps from features has nothing to specialize on. And none of them beats the simpler tool built for each task. Alas! Beauty sometimes earns its place in production, and sometimes utility wins instead.
+## The setup
 
-## The task
+Draw a network as an access graph: a dot per machine or account, an arrow `u -> v` whenever an identity on `u` can authenticate to `v`. An attacker who lands on one machine wants to move, to hop to the next and the next. How far that spread can reach is the blast radius, and it is the thing worth detecting.
 
-Access graphs represent a network: nodes are hosts or accounts, and a directed edge
-`u -> v` means an identity on `u` can authenticate to `v`. We classify two estates that
-look identical locally but differ in blast radius.
+So we build two kinds of estate, on purpose, to be as hard as possible to tell apart:
 
-| class | structure | training | meaning |
-|------|-----------|----------|---------|
-| `flat` | one directed n-cycle (e.g. a 12-cycle) | sizes vary; tested on an unseen size | every host reaches every other; compromise one, reach all |
-| `segmented` | k disjoint directed cycles (e.g. two 6-cycles) | sizes and segment count vary; tested on an unseen size | isolated enclaves; compromise one, reach only its enclave |
+| class | structure | meaning |
+|------|-----------|---------|
+| `flat` | one directed cycle through every host | compromise one, reach all; maximum blast radius |
+| `segmented` | several disjoint cycles | compromise one, reach only its enclave |
 
-A flat estate endangers the whole network if compromised, a segmented one only its
-enclave. The two are 1-WL-equivalent by construction, which is why a standard GNN
-cannot separate them. See [docs/expressivity-and-covers.md](docs/expressivity-and-covers.md).
+One is a catastrophe, the other is fine, but they are built to look identical locally. Every node has one arrow in, one arrow out, and the same constant feature. A standard message-passing GNN only ever sees local neighborhoods, so it gives both estates the same summary and cannot separate them. That is not a bug. It is the 1-Weisfeiler-Leman bound, the classical limit on what these models can distinguish. The signal that would separate them, how much of the graph each node can reach, is global, and no amount of local gossip recovers it.
 
-## Tests and Findings
+## What we tried, and what kept winning
 
-| question | finding |
-|---|---|
-| Can a 1-WL GNN tell a flat estate (compromise one host, reach the whole network) from a segmented one (reach only an enclave)? | No, base rate. But a one-line connected-components count nails it, and so does a reachability cover. The signal, not the architecture. |
-| Does the framework reach "beyond 3-WL", as the source paper claims? | Only by hand-injecting the discriminating substructure (the GSN trick); the generic covers stay 2-FWL-bounded. The WL levels are certified by an in-repo oracle, not asserted (`run_wl.py`). |
-| Does a more sophisticated architecture, a sheaf neural network, help? | No. Base rate on the synthetic tasks; on featureless graphs its restriction maps have nothing to learn from. |
-| On real lateral-movement data (LANL), does any of it beat a no-GNN novelty baseline? | No. A pre-registered null across two red-team windows, for both the cover and a trained sheaf NN. |
-
-The static task in numbers (the first row above):
+The fix is to feed the model a cover: bundles of paths radiating from each node, which expose reachability, the global signal 1-WL was blind to. Hand a model that, and it solves the task perfectly.
 
 | model | PR-AUC | recall @ 1% FPR |
 |---|---|---|
-| GCN, GIN (1-WL) | ~0.03 (= base rate) | 0 |
-| SheafNN (2020) | ~0.03 (= base rate) | 0 |
-| LogReg on # components | 1.0 | 1.0 |
+| GCN, GIN (standard, 1-WL) | ~0.03 (= base rate) | 0 |
+| SheafNN | ~0.03 (= base rate) | 0 |
+| LogReg on # connected components | 1.0 | 1.0 |
 | GCN + reachability feature | 1.0 | 1.0 |
 | CoverNet (cover features) | 1.0 | 1.0 |
 
-~3% positives, tested on a graph size never seen in training. Once reachability is
-exposed, logistic regression on one scalar solves it; the sheaf NN sits at the base rate
-alongside the plain GNNs.
+Read that table honestly. The cover works, but so does a one-line script that counts the connected components. Once the signal is exposed at all, even logistic regression on a single number nails it. The signal was the hard part, not the architecture. This is the refrain, and it recurs.
 
-## Quickstart
+The rest of the synthetic story is variations on the theme:
+
+- Sieves crack a genuinely hard pair, the cospectral Rook's and Shrikhande graphs, provably indistinguishable up to 3-WL. But they manage it only because we hand-fed them the discriminating substructure, an old trick called GSN. The WL levels are certified by an in-repo oracle (`run_wl.py`), not asserted, and we show exactly where the sieve breaks on a harder CFI pair.
+- Sheaves are the most beautiful idea in the building. The sheaf Laplacian's kernel literally equals the component count, the morally correct tool. And they sit at the base rate, because these tasks are featureless by design and a sheaf learns its edge-maps from features. Handed nothing, the right tool does nothing.
+
+Deep dive: [docs/expressivity-and-covers.md](docs/expressivity-and-covers.md). There is also a temporal demo, where the signal is the ordering of events rather than the static graph ([docs/temporal.md](docs/temporal.md)).
+
+## Then we tried it for real
+
+Synthetic tasks are circular, because we chose them, so of course our toys can win. So we ran the LANL authentication dataset, 58 days of real logs with labeled red-team attacks. We pre-registered the prediction first: covers will lose to a boring "is this login new" novelty baseline, because real attackers light up novelty, not graph shape.
+
+A small parable followed. On one slice the cover appeared to win. We held that result for about an hour, until we made the model-fitting numerically honest and replicated on a second slice, at which point the win evaporated. It had been a fitting artifact. The honest verdict, across two windows, for the cover and a trained sheaf network: they do not beat the novelty baseline. The pre-registered null held. See [docs/lanl-probe.md](docs/lanl-probe.md).
+
+Then the obvious objection: sheaves were tested on featureless graphs, which is rigged. Give them the featureful heterophily they were built for. Fair. That became a second movement, palimpsest, with a faithful sheaf network (real learned rotations on every edge) against a well-tuned ordinary GNN, GraphSAGE, on the standard heterophily benchmark:
+
+| model (roman-empire, hardest heterophily) | accuracy |
+|---|---|
+| plain GCN (oversmooths) | 0.27 |
+| GraphSAGE (strong, ordinary baseline) | 0.81 |
+| faithful sheaf network | 0.77 |
+
+The sheaf is genuinely good now. It crushes plain GCN, no excuses. And it still loses to the boring tuned baseline. Same story, fair fight, one level up. Pre-registered again, and consistent with what the heterophily literature has quietly reported for years.
+
+## What to take away
+
+1. The signal is the hard part, not the architecture. Every time the fancy method won, a simple tool that exposed the same signal won just as hard. Reach for the simple tool first.
+2. Beautiful and useful are different axes. The sheaf is the prettiest thing here and never beat a baseline. Both outcomes are fine. Pretending otherwise is not.
+3. Certify, don't assert. When this repo claims a graph is 3-WL-indistinguishable it checks with an oracle. When it claims a win it replicates.
+4. A clean null, honestly reported, is the result. The headline finding, that the clever method does not beat the simple one, is established carefully, twice, on synthetic and real data. Almost nobody publishes that.
+
+## Run it
 
 ```bash
 pip install -r requirements.txt
-python run_experiment.py     # static: 1-WL GNNs vs the reachability cover (~1 min, CPU)
-python run_sieve.py          # sieve cover separates a cospectral SRG pair
-python run_temporal.py       # temporal cover: when event ordering is the signal
-python run_lanl.py --smoke   # real-data probe harness, on a synthetic slice
-python run_wl.py             # certify the Rook/Shrikhande WL level + cover table
+python run_experiment.py        # static: standard GNNs vs the reachability cover (~1 min, CPU)
+python run_sieve.py             # sieve cover separates a cospectral SRG pair
+python run_temporal.py          # temporal cover: when event ordering is the signal
+python run_wl.py                # certify the Rook/Shrikhande WL level + cover table
+python run_lanl.py --smoke      # the real-data probe harness, on a synthetic slice
+python run_gate.py --synthetic  # palimpsest: GNN vs sheaf on heterophily (synthetic plumbing)
 ```
 
-The demos write figures to `results/`, committed so they render here without running;
-`run_wl.py` prints tables instead.
+Demos write their figures to `results/` (committed, so they render here without running). `run_wl.py` and `run_gate.py` print tables.
 
-## Demos
+## Find your way around
 
-| demo | what it shows | deep dive |
-|---|---|---|
-| static | 1-WL GNNs sit at the base rate; the reachability cover (or a one-line component count) solves it | [expressivity-and-covers](docs/expressivity-and-covers.md) |
-| sieve | swapping in the sieve cover separates Rook vs Shrikhande, a cospectral WL-indistinguishable pair | [expressivity-and-covers](docs/expressivity-and-covers.md#the-sieve-cover) |
-| temporal | identical static graphs, only event ordering differs; a temporal cover recovers it (PR-AUC ~0.83) | [temporal](docs/temporal.md) |
-| LANL probe | the honest test on real data: across two red-team windows neither the cover nor a trained sheaf NN beats a no-GNN novelty baseline (the pre-registered null) | [lanl-probe](docs/lanl-probe.md) |
-| WL certification | certifies the Rook/Shrikhande and CFI pairs are 3-WL-indistinguishable, and shows where the sieve cover breaks | [expressivity-and-covers](docs/expressivity-and-covers.md#where-the-sieve-breaks) |
-
-## Repository map
-
-| directory | purpose |
+| where | what |
 |---|---|
-| `src/` | the library: data generators, graph operators, cover algebra, and models. Everything the demos and notebooks import. |
-| `docs/` | written deep dives behind each demo. Read these for the why; the README is the map. |
-| `notebooks/` | a four-part guided tour (covers, static, sieve, temporal) plus appendices on WL/CFI and sheaves, with rendered outputs, so they read without running. |
-| `results/` | committed figures the demos write, embedded in the README and docs. |
-| `tests/` | smoke tests asserting the structural invariants the demos depend on. |
-| `.github/` | CI: runs the tests and smoke-runs two demos on every push. |
+| `src/`, `palimpsest/` | the libraries: data generators, graph operators, cover algebra, and models for the two movements |
+| `docs/` | the per-topic deep dives behind each demo |
+| `notebooks/` | a guided tour (covers, static, sieve, temporal) plus WL/CFI and sheaf appendices, rendered so they read without running |
+| `results/` | committed figures |
+| `tests/`, `.github/` | smoke tests and the CI that runs them and every demo on each push |
 
-Run scripts live at the root: `run_experiment.py`, `run_sieve.py`, `run_temporal.py`,
-`run_lanl.py`, `run_wl.py`. See [docs/repo-structure.md](docs/repo-structure.md) for a
-file-level map.
+Docs: [expressivity and covers](docs/expressivity-and-covers.md), [when time is the signal](docs/temporal.md), [real-data probe (LANL)](docs/lanl-probe.md), [related work and references](docs/related-work.md), [repository structure](docs/repo-structure.md).
 
-## Notebooks
-
-[`notebooks/`](notebooks/) builds each idea from scratch with inline math and plots.
-Start with [01_covers](notebooks/01_covers.ipynb). Kernel setup is in
-[notebooks/README.md](notebooks/README.md).
-
-## More
-
-The source framework is from a withdrawn, disputed ICLR 2026 preprint, so treat its
-claims as unrefereed (see [References](docs/related-work.md#references)). 
-
-- [Expressivity and covers](docs/expressivity-and-covers.md)
-- [When time is the signal](docs/temporal.md)
-- [Real-data probe (LANL)](docs/lanl-probe.md)
-- [Related work and references](docs/related-work.md)
-- [Repository structure](docs/repo-structure.md)
+The source framework is from a withdrawn, disputed ICLR 2026 preprint, so treat its claims as unrefereed (see [References](docs/related-work.md#references)).
