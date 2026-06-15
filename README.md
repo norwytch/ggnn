@@ -8,7 +8,7 @@
 
 This started as an attempt to replicate a paper about cover-based graph neural networks and turned into a small laboratory for one stubborn question: whether changing the topology a network sees, through covers, sieves, sheaves, the whole Grothendieck toolbox, can recover a signal a standard model provably cannot, namely the blast radius a lateral-movement attacker exploits.
 
-The honest answer, which the rest of this README earns rather than asserts: the fancy machinery can recover the signal a plain GNN misses, but it never beats the boring tool a practitioner would already reach for. Not on the synthetic tasks, not on real authentication logs, not even on the featureful data where sheaves are supposed to shine. Beauty sometimes earns its place in production, and sometimes utility wins instead. This repo is mostly about saying so out loud, carefully, instead of publishing the one run where it looked good.
+BLUF: the fancy machinery can recover the signal a plain GNN misses, but it never beats the boring tool a practitioner would already reach for. Not on the synthetic tasks, not on real authentication logs, not even on the featureful data where sheaves are supposed to shine. Beauty sometimes earns its place in production, and sometimes utility wins instead. Further experiments are ongoing. 
 
 ## The setup
 
@@ -35,11 +35,11 @@ The fix is to feed the model a cover: bundles of paths radiating from each node,
 | GCN + reachability feature | 1.0 | 1.0 |
 | CoverNet (cover features) | 1.0 | 1.0 |
 
-Read that table honestly. The cover works, but so does a one-line script that counts the connected components. Once the signal is exposed at all, even logistic regression on a single number nails it. The signal was the hard part, not the architecture. This is the refrain, and it recurs.
+The cover works, but so does a one-line script that counts the connected components. Once the signal is exposed at all, even logistic regression on a single number nails it. The signal was the hard part, not the architecture. This is the refrain, and it recurs.
 
 The rest of the synthetic story is variations on the theme:
 
-- Sieves crack a genuinely hard pair, the cospectral Rook's and Shrikhande graphs, provably indistinguishable up to 3-WL. But they manage it only because we hand-fed them the discriminating substructure, an old trick called GSN. The WL levels are certified by an in-repo oracle (`run_wl.py`), not asserted, and we show exactly where the sieve breaks on a harder CFI pair.
+- Sieves crack a genuinely hard pair: the cospectral Rook's and Shrikhande graphs, provably indistinguishable up to 3-WL. But they manage it only because we hand-fed them the discriminating substructure, an old trick called GSN. The WL levels are certified by an in-repo oracle (`run_wl.py`), not asserted, and we show exactly where the sieve breaks on a harder CFI pair.
 - Sheaves are the most beautiful idea in the building. The sheaf Laplacian's kernel literally equals the component count, the morally correct tool. And they sit at the base rate, because these tasks are featureless by design and a sheaf learns its edge-maps from features. Handed nothing, the right tool does nothing.
 
 Deep dive: [docs/expressivity-and-covers.md](docs/expressivity-and-covers.md). There is also a temporal demo, where the signal is the ordering of events rather than the static graph ([docs/temporal.md](docs/temporal.md)).
@@ -48,7 +48,7 @@ Deep dive: [docs/expressivity-and-covers.md](docs/expressivity-and-covers.md). T
 
 Synthetic tasks are circular, because we chose them, so of course our toys can win. So we ran the LANL authentication dataset, 58 days of real logs with labeled red-team attacks. We pre-registered the prediction first: covers will lose to a boring "is this login new" novelty baseline, because real attackers light up novelty, not graph shape.
 
-A small parable followed. On one slice the cover appeared to win. We held that result for about an hour, until we made the model-fitting numerically honest and replicated on a second slice, at which point the win evaporated. It had been a fitting artifact. The honest verdict, across two windows, for the cover and a trained sheaf network: they do not beat the novelty baseline. The pre-registered null held. See [docs/lanl-probe.md](docs/lanl-probe.md).
+On one slice the cover appeared to win. We held that result for about an hour, until we made the model-fitting numerically honest and replicated on a second slice, at which point the win evaporated. It had been a fitting artifact. They do not beat the novelty baseline. The pre-registered null held. See [docs/lanl-probe.md](docs/lanl-probe.md).
 
 Then the obvious objection: sheaves were tested on featureless graphs, which is rigged. Give them the featureful heterophily they were built for. Fair. That became a second movement, palimpsest, with a faithful sheaf network (real learned rotations on every edge) against a well-tuned ordinary GNN, GraphSAGE, on the standard heterophily benchmark:
 
@@ -58,14 +58,7 @@ Then the obvious objection: sheaves were tested on featureless graphs, which is 
 | GraphSAGE (strong, ordinary baseline) | 0.81 |
 | faithful sheaf network | 0.77 |
 
-The sheaf is genuinely good now. It crushes plain GCN, no excuses. And it still loses to the boring tuned baseline. Same story, fair fight, one level up. Pre-registered again, and consistent with what the heterophily literature has quietly reported for years.
-
-## What to take away
-
-1. The signal is the hard part, not the architecture. Every time the fancy method won, a simple tool that exposed the same signal won just as hard. Reach for the simple tool first.
-2. Beautiful and useful are different axes. The sheaf is the prettiest thing here and never beat a baseline. Both outcomes are fine. Pretending otherwise is not.
-3. Certify, don't assert. When this repo claims a graph is 3-WL-indistinguishable it checks with an oracle. When it claims a win it replicates.
-4. A clean null, honestly reported, is the result. The headline finding, that the clever method does not beat the simple one, is established carefully, twice, on synthetic and real data. Almost nobody publishes that.
+The sheaf is genuinely good now. It crushes plain GCN, no excuses. And it still loses to the boring tuned baseline. Same story, fair fight, one level up. 
 
 ## Run it
 
