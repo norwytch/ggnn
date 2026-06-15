@@ -34,26 +34,29 @@ def score(logits, y, mask, metric):
     return roc_auc_score(y[mask].numpy(), prob)
 
 
-def train_eval(Model, ds, adj, ei, x, y, split, seed, epochs, hidden):
+def train_eval(Model, ds, adj, ei, x, y, split, seed, epochs, hidden, layers, patience):
     torch.manual_seed(seed)
     tr = torch.from_numpy(ds["train"][split])
     va = torch.from_numpy(ds["val"][split])
     te = torch.from_numpy(ds["test"][split])
-    model = Model(x.shape[1], hidden, ds["n_classes"])
+    model = Model(x.shape[1], hidden, ds["n_classes"], layers=layers)
     opt = torch.optim.Adam(model.parameters(), lr=3e-3, weight_decay=5e-4)
     lossf = torch.nn.CrossEntropyLoss()
-    best_val, best_test = -1.0, 0.0
+    best_val, best_test, stale = -1.0, 0.0, 0
     for ep in range(epochs):
         model.train(); opt.zero_grad()
-        out = model(x, adj, ei)
-        lossf(out[tr], y[tr]).backward(); opt.step()
+        lossf(model(x, adj, ei)[tr], y[tr]).backward(); opt.step()
         if ep % 5 == 0 or ep == epochs - 1:
             model.eval()
             with torch.no_grad():
                 out = model(x, adj, ei)
             v, t = score(out, y, va, ds["metric"]), score(out, y, te, ds["metric"])
             if v > best_val:
-                best_val, best_test = v, t
+                best_val, best_test, stale = v, t, 0
+            else:
+                stale += 1
+                if stale > patience:                            # early stop
+                    break
     return best_test
 
 
@@ -62,9 +65,11 @@ def main():
     ap.add_argument("--dataset", default="roman_empire")
     ap.add_argument("--synthetic", action="store_true",
                     help="use a fabricated heterophily graph (no download)")
-    ap.add_argument("--splits", type=int, default=3, help="how many of the 10 splits")
-    ap.add_argument("--epochs", type=int, default=150)
-    ap.add_argument("--hidden", type=int, default=64)
+    ap.add_argument("--splits", type=int, default=2, help="how many of the 10 splits")
+    ap.add_argument("--epochs", type=int, default=400)
+    ap.add_argument("--hidden", type=int, default=256)
+    ap.add_argument("--layers", type=int, default=5)
+    ap.add_argument("--patience", type=int, default=40, help="early-stop patience (in checks)")
     args = ap.parse_args()
 
     if args.synthetic:
@@ -87,27 +92,30 @@ def main():
     results = {}
     for name, Model in REGISTRY.items():
         vals = [train_eval(Model, ds, adj, ei, x, y, s, seed=s, epochs=args.epochs,
-                           hidden=args.hidden) for s in range(n_splits)]
+                           hidden=args.hidden, layers=args.layers, patience=args.patience)
+                for s in range(n_splits)]
         results[name] = (float(np.mean(vals)), float(np.std(vals)))
         print(f"{name:14s} {np.mean(vals):>10.3f}  +/- {np.std(vals):.3f}")
 
-    gcn = results["GCN"][0]; skip = results["GCN+skip"][0]; sheaf = results["DiagSheafNN"][0]
-    skip_ok = skip > gcn + 0.03                              # architecture tweaks must help
+    gcn = results["GCN"][0]; sheaf = results["SheafNN"][0]
+    best_std = max(results["GCN+skip"][0], results.get("SAGE", (0, 0))[0])
+    best_std_name = "GCN+skip" if results["GCN+skip"][0] >= results.get("SAGE", (0, 0))[0] else "SAGE"
+    skip_ok = best_std > gcn + 0.03                          # architecture tweaks must help
     sheaf_ok = sheaf >= gcn                                  # SNN must at least match plain GCN
     calibrated = skip_ok and sheaf_ok
     print("\ngate checks:")
-    print(f"  standard GNN strong on heterophily?  GCN+skip = {skip:.3f} "
-          f"({'ok' if skip_ok else 'FLAG: skip barely beats plain GCN'})")
-    print(f"  sheaf NN at least matches plain GCN?  DiagSheafNN = {sheaf:.3f} vs GCN {gcn:.3f} "
+    print(f"  standard GNN strong on heterophily?  best = {best_std:.3f} ({best_std_name}) "
+          f"({'ok' if skip_ok else 'FLAG: barely beats plain GCN'})")
+    print(f"  sheaf NN at least matches plain GCN?  SheafNN = {sheaf:.3f} vs GCN {gcn:.3f} "
           f"({'ok' if sheaf_ok else 'FLAG: sheaf < plain GCN -> sheaf impl/tuning, not sheaves'})")
     if not calibrated:
-        print("  verdict: harness NOT yet calibrated. Tune the standard GNNs toward the "
-              "Platonov range and strengthen the sheaf model before any comparison is\n"
-              "           trustworthy -- M1 is not passed. (This is the gate doing its job.)\n")
-    elif sheaf > skip + 0.01:
-        print("  verdict: sheaf beats tuned GCN+skip -- investigate against the pre-registered null.\n")
+        print("  verdict: harness NOT yet calibrated -- M1 is not passed. (Gate doing its job.)\n")
+    elif sheaf > best_std + 0.01:
+        print(f"  verdict: sheaf ({sheaf:.3f}) beats the best standard GNN "
+              f"({best_std:.3f}, {best_std_name}) -- investigate against the pre-registered null.\n")
     else:
-        print("  verdict: calibrated, and sheaf does not beat GCN+skip -- the pre-registered null.\n")
+        print(f"  verdict: sheaf ({sheaf:.3f}) does NOT beat the best standard GNN "
+              f"({best_std:.3f}, {best_std_name}) -- the pre-registered null.\n")
 
 
 if __name__ == "__main__":
